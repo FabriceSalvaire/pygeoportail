@@ -323,51 +323,6 @@ class Image(np.ndarray):
     def clear(self):
         self.set(0)
 
-    ##############################################
-
-    def swap_channels(self, channels):
-
-        image_format = self.image_format
-        if ((channels is ImageFormat.BGR and image_format.channels is ImageFormat.RGB) or
-            (channels is ImageFormat.RGB and image_format.channels is ImageFormat.BGR)):
-            output = self.__class__(image_format, channels=channels)
-            cv2.mixChannels([self], [output], (0,2, 1,1, 2,0))
-            return output
-            # ???
-        else:
-            raise NotImplementedError
-
-    ##############################################
-
-    def split_channels(self):
-
-        channel_arrays = cv2.split(self)
-        image_format = self.image_format
-        return [self.__class__(channel_array, share=True, number_of_channels=1, channels=(channel,))
-                for channel, channel_array in zip(image_format.channels, channel_arrays)]
-
-        # cv2.merge(mv)
-
-    ##############################################
-
-    def flip_vertically(self):
-
-        cv2.flip(self, 0, self)
-
-    ##############################################
-
-    def flip_horizontally(self):
-
-        cv2.flip(self, 1, self)
-
-    ##############################################
-
-    def transpose(self):
-
-        output = self.__class__(self.image_format.transpose())
-        cv2.transpose(self, output)
-        return output
-
 ####################################################################################################
 #
 # End
