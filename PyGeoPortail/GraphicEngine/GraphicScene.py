@@ -19,18 +19,6 @@
 ####################################################################################################
 
 ####################################################################################################
-#
-#                                              Audit
-#
-# - 20/10/2011 Fabrice
-#  - z_value is not used
-#  - glortho2d -> coordinate_mapper
-#    - window_to_scene_coordinate
-#    - window_to_scene_distance
-#
-####################################################################################################
-
-####################################################################################################
 
 import logging
 import numpy as np
@@ -58,7 +46,7 @@ class GraphicScene(object):
     _logger = logging.getLogger(__name__)
 
     ##############################################
-    
+
     def __init__(self, glortho2d):
 
         self._glortho2d = glortho2d # Fixme: used for window_to_scene_coordinate window_to_scene_distance
@@ -80,7 +68,7 @@ class GraphicScene(object):
         return self._glortho2d.window_to_gl_distance(x)
 
     ##############################################
-    
+
     def add_item(self, item):
 
         item_id = hash(item)
@@ -88,32 +76,32 @@ class GraphicScene(object):
         self._rtree.add(item_id, item.bounding_box)
 
     ##############################################
-    
+
     def remove_item(self, item):
 
         if self._selected_item is item:
             self.deselect_item(item)
-
+        
         item_id = hash(item)
         del self._items[item_id]
         self._rtree.delete(item_id, item.bounding_box)
 
     ##############################################
-    
+
     def select_item(self, item):
-        
+
         item.is_selected = True
         self._selected_item = item
 
     ##############################################
-    
+
     def deselect_item(self, item):
-        
+
         item.is_selected = False
         self._selected_item = None
 
     ##############################################
-    
+
     def items_in(self, interval):
 
         self._logger.debug(str( interval))
@@ -123,7 +111,7 @@ class GraphicScene(object):
         return items
 
     ##############################################
-    
+
     def items_at(self, x, y):
 
         return self.items_in(point_interval(x, y))
@@ -135,7 +123,7 @@ class GraphicScene(object):
         return self.items_in(centred_interval(x, y, radius))
 
     ##############################################
-    
+
     def item_under_mouse(self, event):
 
         x, y = self._window_to_scene_coordinate(event)
@@ -152,13 +140,13 @@ class GraphicScene(object):
     ##############################################
 
     def keyPressEvent(self, event):
-    
+
         return False
 
     ##############################################
 
     def keyReleaseEvent(self, event):
-       
+
         return False
 
     ##############################################
@@ -174,7 +162,7 @@ class GraphicScene(object):
             return False
 
     ##############################################
-        
+
     def mouseReleaseEvent(self, event):
 
         if self._selected_item is not None:
@@ -213,7 +201,7 @@ class GraphicSceneItem(object):
     _last_id = 0
 
     ##############################################
-    
+
     def __init__(self, interval, z_value=0):
 
         self._hash = GraphicSceneItem._get_new_id()
@@ -238,13 +226,13 @@ class GraphicSceneItem(object):
         return self._interval.bounding_box()
 
     ##############################################
-    
+
     def __lt__(self, other):
 
         return self._z_value < other._z_value
 
     ##############################################
-    
+
     def __hash__(self):
 
         return self._hash
@@ -252,13 +240,13 @@ class GraphicSceneItem(object):
     ##############################################
 
     def keyPressEvent(self, event):
-    
+
         pass
 
     ##############################################
 
     def keyReleaseEvent(self, event):
-       
+
         pass
 
     ##############################################
@@ -280,7 +268,7 @@ class GraphicSceneItem(object):
         pass
 
     ##############################################
-        
+
     def mouseReleaseEvent(self, event):
 
         pass
@@ -296,23 +284,11 @@ class GraphicSceneItem(object):
 class GraphicSceneSquareItem(GraphicSceneItem):
 
     ##############################################
-    
+
     def __init__(self, x, y, radius, **kwargs):
 
         interval = centred_interval(x, y, radius)
         super(GraphicSceneSquareItem, self).__init__(interval, **kwargs)
-
-####################################################################################################
-
-# class GraphicSceneSegmentItem(GraphicSceneItem):
-# 
-#     ##############################################
-#
-## Point2D ?
-#
-#     def __init__(self, x0, y0, x1, y1):
-# 
-#         super(GraphicSceneSquareItem, self).__init__(...)
 
 ####################################################################################################
 #

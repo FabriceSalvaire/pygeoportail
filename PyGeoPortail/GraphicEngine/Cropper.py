@@ -57,13 +57,13 @@ class Grip(GraphicSceneItem):
     margin = 20
 
     ##############################################
-    
+
     def __init__(self, cropper, position):
 
         self._cropper = cropper
         self._position = position
         inner_box = self._cropper._interval
-
+        
         # Fixme: recomputed for each grip
         outer_box = inner_box.copy()
         outer_box.enlarge(self.margin)
@@ -102,16 +102,16 @@ class Grip(GraphicSceneItem):
         elif position == grip_enum.center:
             interval = center_box
         # self._logger.debug("Grip " + str(position) + " " + str(interval))
-
+        
         if position == grip_enum.box:
             z_value = 0
         else:
             z_value = 1
-
+        
         super(Grip, self).__init__(interval, z_value)
 
     ##############################################
-        
+
     @property
     def position(self):
 
@@ -154,14 +154,14 @@ class MovingBox(object):
             return self._interval + self._translation
         else:
             return self._interval
-        
+
     ##############################################
 
     def move(self, point):
 
         # Fixme: design, return translated interval ?
         self._translation = point - self._point
-        
+
 ####################################################################################################
 
 class Cropper(object):
@@ -169,12 +169,12 @@ class Cropper(object):
     _logger = logging.getLogger(__name__)
 
     ##############################################
-    
+
     def __init__(self, glwidget):
 
         self._glwidget = glwidget
         self._roi_painter = glwidget._painter_manager['roi']
-
+        
         self._locked = False
         self._updating = False
         self._scene_items = []
@@ -260,7 +260,7 @@ class Cropper(object):
                                                                    grip_enum.e,
                                                                    grip_enum.box,
                                                                    grip_enum.center)]
-
+        
         for scene_item in self._scene_items:
             self._glwidget.scene.add_item(scene_item)
 
@@ -280,7 +280,7 @@ class Cropper(object):
         if self._locked:
             self._show_locked_warning_message()
             return
-
+        
         self._logger.debug("Begin Crop")
         self.reset()
         x, y = self._glwidget.window_to_gl_coordinate(event)
@@ -307,11 +307,11 @@ class Cropper(object):
 
         if not self._updating:
             return
-
+        
         if self._locked:
             self._show_locked_warning_message()
             return
-
+        
         self._logger.debug("Update Crop")
         self.enable()
         self._update_constrained_box(event)
@@ -322,22 +322,22 @@ class Cropper(object):
     def end(self, event):
 
         # Fixme: mouseReleaseEvent
-        
+
         if not self._updating:
             return
-
+        
         if self._locked:
             self._show_locked_warning_message()
             return
-
+        
         self._logger.debug("End Crop")
         self._update_constrained_box(event)
         self._updating = False
-
+        
         self.disable()
         self._set_grips()
         self.enable()
-
+        
         self._glwidget.update() # updateGL
 
     ##############################################
@@ -359,7 +359,7 @@ class Cropper(object):
         x, y = self._interval.x, self._interval.y
         interval = self._interval
         self.reset() # Fixme: check action
-
+        
         if grip.position == grip_enum.nw:
             self._constrained_box = ConstrainedBox(x1=x.sup, y1=y.inf)
         elif grip.position == grip_enum.n:
@@ -380,7 +380,7 @@ class Cropper(object):
             # Fixme: overwrite qt event -> gl coordinate
             point = self._glwidget.window_to_gl_coordinate(event)
             self._constrained_box = MovingBox(interval, point)
-            
+        
         self._updating = True
         self.update(event)
 

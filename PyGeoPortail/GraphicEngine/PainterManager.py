@@ -36,12 +36,12 @@ class BasicPainterManager(object):
     ##############################################
 
     def __init__(self, glwidget):
-        
-        self.glwidget = glwidget
 
+        self.glwidget = glwidget
+        
         # Fixme: register self
         self.glwidget._painter_manager = self
-
+        
         self._painters = {}
         self._sorted_painters = []
         self._create_registered_painters()
@@ -75,7 +75,7 @@ class BasicPainterManager(object):
 
         self._sorted_painters = sorted([painter for painter in self._painters.values()
                                         if bool(painter)])
-    
+
     ##############################################
 
     def __getitem__(self, name):
@@ -93,7 +93,7 @@ class BasicPainterManager(object):
     def sorted_iterator(self):
 
         return iter(self._sorted_painters)
-    
+
     ##############################################
 
     def paint(self):
@@ -107,20 +107,20 @@ class BasicPainterManager(object):
 class PainterManager(object):
 
     # Fixme: useful ?
-    
+
     _logger = logging.getLogger(__name__)
 
     ##############################################
 
     def __init__(self, glwidget):
-        
+
         super(PainterManager, self).__init__()
-
+        
         self.glwidget = glwidget
-
+        
         # Fixme: register self
         self.glwidget._painter_manager = self
-
+        
         self._background_painter = None
         self.create_background_painter()
         
@@ -175,7 +175,7 @@ class PainterManager(object):
             return self._background_painter
         else:
             return self._foreground_painters[name]
-    
+
     ##############################################
 
     def painter_iterator(self):

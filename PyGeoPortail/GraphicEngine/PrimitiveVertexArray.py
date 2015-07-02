@@ -46,9 +46,9 @@ class LineVertexArray(GlVertexArrayObject):
     """ Base class to draw segments primitives as lines. """
 
     _logger = _module_logger.getChild('LineVertexArray')
-    
+
     ##############################################
-    
+
     def __init__(self, path=None):
 
         super(LineVertexArray, self).__init__()
@@ -71,9 +71,9 @@ class LineVertexArray(GlVertexArrayObject):
 
         self._number_of_objects = 0
         # Fixme: only for dynamic ?
-        
+
     ##############################################
-    
+
     def bind_to_shader(self, shader_program_interface_attribute):
 
         """ Bind the vertex array to the shader program interface attribute.
@@ -84,7 +84,7 @@ class LineVertexArray(GlVertexArrayObject):
         self.unbind()
 
     ##############################################
-    
+
     def draw(self):
 
         """ Draw the vertex array as lines. """
@@ -95,13 +95,13 @@ class LineVertexArray(GlVertexArrayObject):
             self.unbind()
 
     ##############################################
-    
+
     def set(self, path):
 
         """ Set the vertex array from an iterable of segments. """
 
         # Fixme: make no sense, must be a list of paths
-        
+
         self._number_of_objects = path.number_of_points # Right ?
         vertexes = np.zeros((self._number_of_objects, 2), dtype=np.float32)
         vertexes[...] = path.points
@@ -117,7 +117,7 @@ class LineStripVertexArray(LineVertexArray):
     _logger = _module_logger.getChild('LineStripVertexArray')
 
     ##############################################
-    
+
     def draw(self):
 
         """ Draw the vertex array as lines. """
@@ -128,7 +128,7 @@ class LineStripVertexArray(LineVertexArray):
             self.unbind()
 
     ##############################################
-    
+
     def set(self, path):
 
         """ Set the vertex array from an iterable of segments. """
@@ -148,7 +148,7 @@ class DynamicLineStripVertexArray(LineStripVertexArray):
     _logger = _module_logger.getChild('DynamicLineStripVertexArray')
 
     ##############################################
-    
+
     def __init__(self, size=1000, upscale_factor=3):
 
         super(DynamicLineStripVertexArray, self).__init__()
@@ -157,7 +157,7 @@ class DynamicLineStripVertexArray(LineStripVertexArray):
         self._allocate(size)
         
         self._update_vertex = np.zeros((2, 2), dtype=np.float32)
-    
+
     ##############################################
 
     def _allocate(self, size):
@@ -166,9 +166,9 @@ class DynamicLineStripVertexArray(LineStripVertexArray):
         self._number_of_objects_max = self._size / 2 -2
         array = np.zeros((size, 2), dtype=np.float32)
         self._vertex_array_buffer.set(array, usage=GL.GL_DYNAMIC_DRAW)
-    
+
     ##############################################
-    
+
     def add_vertex(self, point):
 
         """ Set the vertex array from an iterable of segments. """
@@ -183,7 +183,7 @@ class DynamicLineStripVertexArray(LineStripVertexArray):
             self._logger.debug("upscale buffer to size {}".format(size))
             self._allocate(size)
             self._vertex_array_buffer.set_sub_data(data, 0)
-                
+        
         vertex = self._update_vertex
         vertex[:] = point
         # vertex += .5
@@ -200,18 +200,18 @@ class DynamicLineVertexArray(LineVertexArray):
     _logger = _module_logger.getChild('DynamicLineVertexArray')
 
     ##############################################
-    
+
     def __init__(self):
 
         super(DynamicLineVertexArray, self).__init__()
-
+        
         array = np.zeros((2, 2), dtype=np.float32)
         self._vertex_array_buffer.set(array)
-
+        
         self._update_vertex = np.zeros((2,), dtype=np.float32)
 
     ##############################################
-    
+
     def _set_vertex(self, point, offset):
 
         # Fixme: to ensure compatible type ?
@@ -221,19 +221,19 @@ class DynamicLineVertexArray(LineVertexArray):
         self._vertex_array_buffer.set_sub_data(vertex, offset)
 
     ##############################################
-    
+
     def set_first_vertex(self, point):
 
         self._number_of_objects = 1
         self._set_vertex(point, 0)
 
     ##############################################
-    
+
     def set_second_vertex(self, point):
 
         self._number_of_objects = 2
         self._set_vertex(point, 2)
-        
+
 ####################################################################################################
 #
 # End
