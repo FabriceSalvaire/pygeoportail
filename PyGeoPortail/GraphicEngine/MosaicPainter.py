@@ -22,6 +22,8 @@
 
 import logging
 
+import numpy as np
+
 ####################################################################################################
 
 from PyOpenGLng.HighLevelApi import GL
@@ -188,8 +190,8 @@ Texture Cache: recycle
     def _create_texture(self, tile, key):
 
         self._logger.debug('Create Texture ' + str(key))
-        position = Point(tile.x, tile.y)
-        image_dimension = Offset(tile.length, tile.length)
+        position = Point(tile.x, tile.y+tile.length)
+        image_dimension = Offset(tile.length, -tile.length)
         self._glwidget.makeCurrent() #?
         with GL.error_checker():
             texture = Texture(key, position, image_dimension, tile.image)

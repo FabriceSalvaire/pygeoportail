@@ -52,16 +52,19 @@ class GlWidget(GlWidgetBase):
     def __init__(self, parent):
 
         self._logger.debug('Initialise GlWidget')
-
+        
         super(GlWidget, self).__init__(parent)
-
+        
         self._application = QtWidgets.QApplication.instance()
-
+        
         self._previous_position = None
         self._previous_position_screen = None
-
+        
         self._painter_manager = None
-
+        
+        self.x_step = 256
+        self.y_step = 256
+        
         # Fixme
         self._ready = False
 
@@ -113,7 +116,7 @@ class GlWidget(GlWidgetBase):
 
     def update_model_view_projection_matrix(self):
 
-        viewport_uniform_buffer_data = self.glortho2d.viewport_uniform_buffer_data(self.size())
+        viewport_uniform_buffer_data = self.glortho2d.viewport_uniform_buffer_data(self.size(), flip_y=True)
         self._viewport_uniform_buffer.set(viewport_uniform_buffer_data)
 
     ##############################################
