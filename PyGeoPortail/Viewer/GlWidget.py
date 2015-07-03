@@ -78,7 +78,7 @@ class GlWidget(GlWidgetBase):
     def init_glortho2d(self):
 
         # Set max_area so as to correspond to max_binning zoom centered at the origin
-        area_size = 10**5
+        area_size = 10**12
         max_area = IntervalInt2D([-area_size, area_size], [-area_size, area_size])
 
         super(GlWidget, self).init_glortho2d(max_area, zoom_manager=None)
@@ -118,6 +118,18 @@ class GlWidget(GlWidgetBase):
 
     ##############################################
 
+    # @opengl_context
+    def update(self):
+
+        if self._ready:
+            self._painter_manager.update()
+        super(GlWidget, self).update()
+        # self.emit(QtCore.SIGNAL('update()'))
+        # if self._ready:
+        #     self._update_zoom_status()
+
+    ##############################################
+
     def paint(self):
 
         if self._ready:
@@ -126,10 +138,10 @@ class GlWidget(GlWidgetBase):
 
     ##############################################
 
-    def display_all(self):
-
-        self.glortho2d.zoom_interval(self._image_interval)
-        self.update()
+#   def display_all(self):
+#
+#       self.glortho2d.zoom_interval(...)
+#       self.update()
 
     ##############################################
 

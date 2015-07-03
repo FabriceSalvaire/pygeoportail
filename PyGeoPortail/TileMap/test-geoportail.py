@@ -46,8 +46,8 @@ geoportail_wtms = GeoPortailWTMS(user='fabrice.salvaire@orange.fr',
 geoportail_pyramid = GeoPortailPyramid()
 
 level = 16
-longitude=GeoAngle(6, 7, 0)
-latitude=GeoAngle(44, 41, 0)
+longitude = GeoAngle(6, 7, 0)
+latitude = GeoAngle(44, 41, 0)
 location = GeoCoordinate(longitude, latitude)
 row, column = geoportail_pyramid[level].coordinate_to_mosaic(location)
 print(level, row, column)

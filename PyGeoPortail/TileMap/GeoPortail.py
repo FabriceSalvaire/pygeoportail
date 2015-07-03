@@ -82,7 +82,7 @@ class GeoPortailTile(object):
         array = np.array(self.to_pil_image())
         image = Image(array, channels=ImageFormat.RGB)
         
-        return Image
+        return image
 
     ##############################################
 

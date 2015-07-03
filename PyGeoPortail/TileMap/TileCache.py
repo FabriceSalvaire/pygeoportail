@@ -41,10 +41,11 @@ class Tile(object):
 
     ##############################################
 
-    def __init__(self, layer, level, row, column, image):
+    def __init__(self, layer, level, length, row, column, image):
 
         self._layer = layer
         self._level = level
+        self._length = length
         self._row = row
         self._column = column
         self._image = image
@@ -59,9 +60,21 @@ class Tile(object):
 
     def size(self):
 
-        # Fixme: AttributeError: type object 'Image' has no attribute 'image_format'
-        # return self._image.image_format.number_of_bytes
-        return 256*256*8*3
+        return self._image.image_format.number_of_bytes
+
+    ##############################################
+
+    @property
+    def x(self):
+        return self._column * self._length
+
+    @property
+    def y(self):
+        return self._row * self._length
+
+    @property
+    def length(self):
+        return self._length
 
     ##############################################
 
@@ -107,7 +120,8 @@ class CachedPyramid(object):
         else:
             self._logger.info('Add tile in cache')
             data = self._data_provider.get_tile(level, row, column)
-            tile = Tile(self._layer_id, level, row, column, data)
+            length = self._pyramid[level].tile_length_m
+            tile = Tile(self._layer_id, level, length, row, column, data)
             self._lru_cache.add(tile)
             return tile
 
