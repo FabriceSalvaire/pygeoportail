@@ -27,6 +27,7 @@ import numpy as np
 ####################################################################################################
 
 from PyOpenGLng.HighLevelApi import GL
+from PyOpenGLng.HighLevelApi.GlWidgetBase import GlWidgetBase
 from PyOpenGLng.HighLevelApi.TextureVertexArray import GlTextureVertexArray
 from PyOpenGLng.Math.Geometry import Point, Offset
 
@@ -147,6 +148,8 @@ Texture Cache: recycle
 
     def update(self):
 
+        self._logger.debug('Update Mosaic Painter ')
+        
         texture_cache = self._texture_cache
         cached_pyramid = self._cached_pyramid
         
@@ -181,6 +184,8 @@ Texture Cache: recycle
             if texture is None:
                 texture = self._create_texture(tile, key)
             self._textures.append(texture)
+            GlWidgetBase.update(self._glwidget)
+            self.paint()
         
         # Recycle the cache
         self.recycle()
@@ -204,6 +209,7 @@ Texture Cache: recycle
 
     def paint(self):
 
+        self._logger.debug('Paint')
         self._shader_program.bind()
         for texture in self._textures:
             texture.draw()

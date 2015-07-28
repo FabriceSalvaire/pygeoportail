@@ -116,6 +116,7 @@ class GlWidget(GlWidgetBase):
 
     def update_model_view_projection_matrix(self):
 
+        self._logger.debug('')
         viewport_uniform_buffer_data = self.glortho2d.viewport_uniform_buffer_data(self.size(), flip_y=True)
         self._viewport_uniform_buffer.set(viewport_uniform_buffer_data)
 
@@ -124,6 +125,7 @@ class GlWidget(GlWidgetBase):
     # @opengl_context
     def update(self):
 
+        # super(GlWidget, self).update()
         if self._ready:
             self._painter_manager.update()
         super(GlWidget, self).update()
@@ -138,13 +140,6 @@ class GlWidget(GlWidgetBase):
         if self._ready:
             with GL.error_checker():
                 self._painter_manager.paint()
-
-    ##############################################
-
-#   def display_all(self):
-#
-#       self.glortho2d.zoom_interval(...)
-#       self.update()
 
     ##############################################
 

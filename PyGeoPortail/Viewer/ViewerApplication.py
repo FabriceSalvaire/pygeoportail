@@ -88,19 +88,7 @@ class ViewerApplication(GuiApplicationBase):
         latitude = GeoAngle(44, 41, 0)
         location = GeoCoordinate(longitude, latitude)
         x, y = self._cached_pyramid._pyramid[level].coordinate_to_projection(location)
-        print(x, y)
         glwidget.zoom_at(x, y)
-        
-        # from PyGeoPortail.GraphicEngine.TexturePainter import TexturePainter
-        # texture_painter = TexturePainter(self.painter_manager)
-        # from PyGeoPortail.Image import ImageLoader
-        # image = ImageLoader.load_image('big-image.jpg')
-        # image_format = image.image_format
-        # from PyOpenGLng.Math.Geometry import Point, Offset
-        # texture_painter.upload(Point(0, 0), Offset(image_format.width, image_format.height), image)
-        
-        # from PyOpenGLng.Math.Interval import Interval2D
-        # glwidget._image_interval = Interval2D((0, image_format.height), (0, image_format.width))
         
         glwidget.init_tools() # Fixme: for shader
         glwidget._ready = True
