@@ -20,9 +20,12 @@
 
 ####################################################################################################
 
+import asyncio
 import logging
 
-import requests
+# import requests
+from yieldfrom import requests
+
 import numpy as np
 
 ####################################################################################################
@@ -114,27 +117,34 @@ class GeoPortailWTMS(object):
 
     ##############################################
 
+    @asyncio.coroutine
     def _download_layer(self, layer, level, row, column):
 
         image_format = 'image/jpeg'
         url = self.__url_template__.format(self._api_key, layer, image_format, level, row, column)
         self._logger.info('GET ' + url)
-        request = requests.get(url, auth=(self._user, self._password))
-        request.raise_for_status()
         
-        return GeoPortailTile(layer, level, row, column, request.content)
+        request = yield from requests.get(url, auth=(self._user, self._password))
+        request.raise_for_status()
+        content = yield from request.content
+        
+        return GeoPortailTile(layer, level, row, column, content)
 
     ##############################################
 
+    @asyncio.coroutine
     def download_map(self, *args, **kwargs):
 
-        return self._download_layer('GEOGRAPHICALGRIDSYSTEMS.MAPS', *args, **kwargs)
+        tile = yield from self._download_layer('GEOGRAPHICALGRIDSYSTEMS.MAPS', *args, **kwargs)
+        return tile
 
     ##############################################
 
+    @asyncio.coroutine
     def download_ortho_photo(self, *args, **kwargs):
 
-        return self._download_layer('ORTHOIMAGERY.ORTHOPHOTOS', *args, **kwargs)
+        tile = yield from self._download_layer('ORTHOIMAGERY.ORTHOPHOTOS', *args, **kwargs)
+        return tile
 
 ####################################################################################################
 
@@ -159,9 +169,11 @@ class GeoPortailOthorPhotoProvider(GeoPortailProvider):
 
     ##############################################
 
+    @asyncio.coroutine
     def get_tile(self, level, row, column):
 
-        return self._wtms.download_ortho_photo(level, row, column).to_image()
+        tile = yield from self._wtms.download_ortho_photo(level, row, column)
+        return tile.to_image()
 
 ####################################################################################################
 
@@ -169,9 +181,11 @@ class GeoPortailMapProvider(GeoPortailProvider):
 
     ##############################################
 
+    @asyncio.coroutine
     def get_tile(self, level, row, column):
 
-        return self._wtms.download_map(level, row, column).to_image()
+        tile = yield from self._wtms.download_map(level, row, column)
+        return tile.to_image()
 
 ####################################################################################################
 #

@@ -20,6 +20,7 @@
 
 ####################################################################################################
 
+import asyncio
 import logging
 
 ####################################################################################################
@@ -63,6 +64,14 @@ class Tile(object):
         return self._image.image_format.number_of_bytes
 
     ##############################################
+
+    @property
+    def row(self):
+        return self._row
+
+    @property
+    def column(self):
+        return self._column
 
     @property
     def x(self):
@@ -111,6 +120,7 @@ class CachedPyramid(object):
 
     ##############################################
 
+    @asyncio.coroutine
     def acquire(self, level, row, column):
 
         obj = self._lru_cache.acquire(Tile.tile_key(self._layer_id, level, row, column))
@@ -119,7 +129,7 @@ class CachedPyramid(object):
             return obj
         else:
             self._logger.info('Add tile in cache')
-            data = self._data_provider.get_tile(level, row, column)
+            data = yield from self._data_provider.get_tile(level, row, column)
             length = self._pyramid[level].tile_length_m
             tile = Tile(self._layer_id, level, length, row, column, data)
             self._lru_cache.add(tile)

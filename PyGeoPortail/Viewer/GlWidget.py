@@ -35,6 +35,9 @@ from PyOpenGLng.HighLevelApi.Buffer import GlUniformBuffer
 from PyOpenGLng.HighLevelApi.GlWidgetBase import GlWidgetBase
 from PyOpenGLng.Math.Interval import IntervalInt2D # duplicated
 
+from PyOpenGLng.Math.Geometry import Vector
+from PyOpenGLng.HighLevelApi.Ortho2D import XAXIS, YAXIS, XYAXIS
+
 from PyGeoPortail.GraphicEngine.GraphicScene import GraphicScene
 
 ####################################################################################################
@@ -122,12 +125,91 @@ class GlWidget(GlWidgetBase):
 
     ##############################################
 
+    def zoom_one(self):
+
+        self.glortho2d.zoom_at_center(1.)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def zoom_at_with_scale(self, x, y, zoom_factor):
+
+        location = Vector(x, y)
+        self.glortho2d.zoom_at_with_scale(location, zoom_factor)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def zoom_at(self, x, y):
+
+        location = Vector(x, y)
+        self.glortho2d.zoom_at(location)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def zoom_interval(self, interval):
+
+        self.glortho2d.zoom_interval(interval)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def translate_x(self, dx):
+
+        self.glortho2d.translate(dx, XAXIS)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def translate_y(self, dy):
+
+        self.glortho2d.translate(dy, YAXIS)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def translate_xy(self, dxy):
+
+        self.glortho2d.translate(dxy, XYAXIS)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def wheel_zoom(self, event):
+
+        self._logger.debug('Wheel Zoom')
+        
+        position = self.window_to_gl_coordinate(event)
+        zoom_factor = self.glortho2d.zoom_manager.zoom_factor
+        
+        delta = event.angleDelta().y()
+        if delta == 120:
+            zoom_factor *= self.zoom_step
+        else:
+            zoom_factor /= self.zoom_step
+        
+        self.glortho2d.zoom_at_with_scale(position, zoom_factor)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def update_painter_manager(self):
+
+        self._logger.info('')
+        if self._ready:
+            self._painter_manager.update()
+            self.update()
+
+    ##############################################
+
     # @opengl_context
     def update(self):
 
+        self._logger.info('')
         # super(GlWidget, self).update()
         if self._ready:
-            self._painter_manager.update()
+            self._painter_manager.paint()
         super(GlWidget, self).update()
         # self.emit(QtCore.SIGNAL('update()'))
         # if self._ready:

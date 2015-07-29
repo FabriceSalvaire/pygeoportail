@@ -20,6 +20,7 @@
 
 ####################################################################################################
 
+import asyncio
 import logging
 
 import numpy as np
@@ -106,6 +107,8 @@ class MosaicPainter(Painter):
         self._level = 16
         self._textures = []
         self._tile_list = []
+        
+        self._loop = asyncio.get_event_loop()
 
     ##############################################
 
@@ -148,7 +151,7 @@ Texture Cache: recycle
 
     def update(self):
 
-        self._logger.debug('Update Mosaic Painter ')
+        self._logger.debug('Update Mosaic Painter')
         
         texture_cache = self._texture_cache
         cached_pyramid = self._cached_pyramid
@@ -175,20 +178,30 @@ Texture Cache: recycle
         # Set
         tile_indexes = tiles_to_keep + tiles_to_acquire
         tile_indexes.sort()
+       
+        tasks = [asyncio.async(cached_pyramid.acquire(self._level, row, column))
+                 for row, column in tile_indexes]
+        # for task in tasks:
+        #     task.add_done_callback(self._task_callback)
+        self._loop.run_until_complete(asyncio.wait(tasks))
         
-        for tile_index in tile_indexes:
-            row, column = tile_index
-            tile = cached_pyramid.acquire(self._level, row, column)
-            key = Tile.tile_key(0, self._level, row, column)
-            texture = texture_cache.acquire(key)
-            if texture is None:
-                texture = self._create_texture(tile, key)
-            self._textures.append(texture)
-            GlWidgetBase.update(self._glwidget)
-            self.paint()
+        for task in tasks:
+            self._task_callback(task)
         
         # Recycle the cache
         self.recycle()
+
+    ##############################################
+
+    def _task_callback(self, task):
+
+        tile = task.result()
+        key = Tile.tile_key(0, self._level, tile.row, tile.column)
+        texture = self._texture_cache.acquire(key)
+        if texture is None:
+            texture = self._create_texture(tile, key)
+        self._textures.append(texture)
+        # self._glwidget.update()
 
     ##############################################
 

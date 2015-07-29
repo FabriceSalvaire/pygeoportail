@@ -29,6 +29,10 @@ logger = Logging.setup_logging('pygeoportail')
 
 ####################################################################################################
 
+import asyncio
+
+####################################################################################################
+
 from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
                                              GeoPortailWTMS,
                                              GeoPortailMapProvider,
@@ -60,22 +64,31 @@ print(mosaic_interval)
 # for row, column in mosaic_interval.iter():
 #     print(row, column)
 
-tile = geoportail_wtms.download_ortho_photo(level, row, column)
+loop = asyncio.get_event_loop()
+
+tile = loop.run_until_complete(geoportail_wtms.download_ortho_photo(level, row, column))
 tile.to_pil_image().save(tile.filename(with_layer=True, with_level=True))
 
 geoportail_map_provider = GeoPortailMapProvider(geoportail_wtms)
-data = geoportail_map_provider.get_tile(level, row, column)
+tasks = [asyncio.async(geoportail_map_provider.get_tile(level, row, column + i)) for i in range(3)]
+loop.run_until_complete(asyncio.wait(tasks))
 
 lru_cache = LruCache(constraint=1024**3)
 
+def done_callback(future):
+    print('done', future.result())
+
 cached_pyramid = CachedPyramid(geoportail_map_provider, lru_cache)
-tile = cached_pyramid.acquire(level, row, column)
-tile = cached_pyramid.acquire(level, row, column +1)
-tile = cached_pyramid.acquire(level, row, column)
+tasks = [asyncio.async(cached_pyramid.acquire(level, row, column + i)) for i in (0, 1, 0)]
+for task in tasks:
+    task.add_done_callback(done_callback)
+loop.run_until_complete(asyncio.wait(tasks))
 cached_pyramid.release(level, row, column)
 lru_cache.recycle()
 
-tiles = cached_pyramid.acquire_interval(level, mosaic_interval)
+# tiles = cached_pyramid.acquire_interval(level, mosaic_interval)
+
+loop.close()
 
 ####################################################################################################
 #
