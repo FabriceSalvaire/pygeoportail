@@ -41,6 +41,12 @@ class Pyramid(object):
 
     ##############################################
 
+    def __iter__(self):
+
+        return iter(self._levels)
+
+    ##############################################
+
     def __getitem__(self, level):
 
         return self._levels[level]
@@ -75,6 +81,17 @@ class Pyramid(object):
     def tile_size(self):
         return self.__tile_size__
 
+    ##############################################
+
+    def coordinate_to_projection(self, geo_coordinate):
+
+        x0, y0 = self.__offset__
+        xm, ym = geo_coordinate.mercator
+        x = xm - x0
+        y = y0 - ym
+
+        return (x, y)
+
 ####################################################################################################
 
 class PyramidLevel(object):
@@ -88,6 +105,12 @@ class PyramidLevel(object):
         self._tile_size = pyramid.tile_size
         self._mosaic_size = 2**level
         self._resolution = pyramid.root_resolution / self.mosaic_size
+
+    ##############################################
+
+    @property
+    def level(self):
+        return self._level
 
     ##############################################
 
@@ -115,17 +138,6 @@ class PyramidLevel(object):
 
     ##############################################
 
-    def coordinate_to_projection(self, geo_coordinate):
-
-        x0, y0 = self._pyramid.offset
-        xm, ym = geo_coordinate.mercator
-        x = xm - x0
-        y = y0 - ym
-
-        return (x, y)
-
-    ##############################################
-
     def projection_to_mosaic(self, coordinate):
 
         x, y = coordinate
@@ -135,6 +147,12 @@ class PyramidLevel(object):
             return row, column
         else:
             raise ValueError('Out of region')
+
+    ##############################################
+
+    def coordinate_to_projection(self, geo_coordinate):
+
+        return self._pyramid.coordinate_to_projection(geo_coordinate)
 
     ##############################################
 

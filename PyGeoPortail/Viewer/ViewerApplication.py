@@ -83,16 +83,15 @@ class ViewerApplication(GuiApplicationBase):
         from PyGeoPortail.GraphicEngine.MosaicPainter import MosaicPainter
         self._mosaic_painter = MosaicPainter(self.painter_manager, self._cached_pyramid)
         
+        glwidget.init_tools() # Fixme: for shader
+        glwidget._ready = True
+        
         level = 16
         longitude = GeoAngle(6, 7, 0)
         latitude = GeoAngle(44, 41, 0)
         location = GeoCoordinate(longitude, latitude)
         x, y = self._cached_pyramid._pyramid[level].coordinate_to_projection(location)
-        glwidget.zoom_at(x, y)
-        
-        glwidget.init_tools() # Fixme: for shader
-        glwidget._ready = True
-        glwidget.display_all()
+        glwidget.zoom_at_with_scale(x, y, zoom_factor=1) # Fixme: 1 px : ???
 
 ####################################################################################################
 #

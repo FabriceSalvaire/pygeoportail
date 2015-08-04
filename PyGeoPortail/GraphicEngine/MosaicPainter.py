@@ -23,7 +23,8 @@
 import asyncio
 import logging
 
-import numpy as np
+from PyQt5 import QtCore, QtGui, QtWidgets
+from quamash import QEventLoop, QThreadExecutor
 
 ####################################################################################################
 
@@ -105,10 +106,16 @@ class MosaicPainter(Painter):
         self._shader_program = self._glwidget.shader_manager.texture_shader_program
         
         self._level = 16
-        self._textures = []
         self._tile_list = []
+        self._textures = []
+        self._texture_dict = {}
         
+        application = QtWidgets.QApplication.instance()
         self._loop = asyncio.get_event_loop()
+        # self._loop = QEventLoop(application)
+        # asyncio.set_event_loop(self._loop)
+
+        # self._loop.close()
 
     ##############################################
 
@@ -158,7 +165,7 @@ Texture Cache: recycle
         
         # always compute tile list
         old_tile_list = self._tile_list
-        pyramid_level = self._cached_pyramid._pyramid[self._level]
+        pyramid_level = self._cached_pyramid._pyramid[self._level] # Fixme: zoom -> level
         mosaic_interval = pyramid_level.projection_interval_to_mosaic(self._viewport_area.area)
         self._tile_list = list(mosaic_interval.iter())
         self._logger.debug('Viewport\n' + str(self._tile_list))
@@ -168,40 +175,51 @@ Texture Cache: recycle
         
         # Reset
         self._textures = []
-        for tile_index in tiles_to_release + tiles_to_keep:
+        print(self._texture_dict)
+        for tile_index in tiles_to_keep:
+            row, column = tile_index
+            key = Tile.tile_key(0, self._level, row, column)
+            self._textures.append(self._texture_dict[key])
+        self._glwidget.update()
+        
+        # Get new tiles
+        if tiles_to_acquire:
+            tasks = [asyncio.async(cached_pyramid.acquire(self._level, row, column))
+                     for row, column in tiles_to_acquire]
+            # for task in tasks:
+            #     task.add_done_callback(self._task_callback)
+            self._logger.debug('Run loop')
+            #!# with self._loop:
+            self._loop.run_until_complete(asyncio.wait(tasks))
+            self._logger.debug('loop done')
+            for task in tasks:
+                self._task_callback(task)
+        
+        # Recycle the cache
+        for tile_index in tiles_to_release:
             # Fixme: key
             row, column = tile_index
             cached_pyramid.release(self._level, row, column)
             key = Tile.tile_key(0, self._level, row, column)
             texture_cache.release(key)
-        
-        # Set
-        tile_indexes = tiles_to_keep + tiles_to_acquire
-        tile_indexes.sort()
-       
-        tasks = [asyncio.async(cached_pyramid.acquire(self._level, row, column))
-                 for row, column in tile_indexes]
-        # for task in tasks:
-        #     task.add_done_callback(self._task_callback)
-        self._loop.run_until_complete(asyncio.wait(tasks))
-        
-        for task in tasks:
-            self._task_callback(task)
-        
-        # Recycle the cache
         self.recycle()
+        
+        self._texture_dict = {texture.key():texture for texture in self._textures}
+        
+        self._logger.debug('Update Mosaic Painter Done')
 
     ##############################################
 
     def _task_callback(self, task):
 
         tile = task.result()
+        
         key = Tile.tile_key(0, self._level, tile.row, tile.column)
         texture = self._texture_cache.acquire(key)
         if texture is None:
             texture = self._create_texture(tile, key)
         self._textures.append(texture)
-        # self._glwidget.update()
+        self._glwidget.update()
 
     ##############################################
 

@@ -23,6 +23,7 @@
 import logging
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtOpenGL import QGLWidget as QOpenGLWidget
 
 import numpy as np
 
@@ -65,8 +66,8 @@ class GlWidget(GlWidgetBase):
         
         self._painter_manager = None
         
-        self.x_step = 256
-        self.y_step = 256
+        self.x_step = 1000
+        self.y_step = 1000
         
         # Fixme
         self._ready = False
@@ -119,7 +120,7 @@ class GlWidget(GlWidgetBase):
 
     def update_model_view_projection_matrix(self):
 
-        self._logger.debug('')
+        self._logger.debug(str(self.glortho2d))
         viewport_uniform_buffer_data = self.glortho2d.viewport_uniform_buffer_data(self.size(), flip_y=True)
         self._viewport_uniform_buffer.set(viewport_uniform_buffer_data)
 
@@ -196,21 +197,21 @@ class GlWidget(GlWidgetBase):
 
     def update_painter_manager(self):
 
-        self._logger.info('')
+        self._logger.debug('')
         if self._ready:
-            self._painter_manager.update()
-            self.update()
+            with GL.error_checker():
+                self._painter_manager.update()
 
     ##############################################
 
     # @opengl_context
     def update(self):
 
-        self._logger.info('')
-        # super(GlWidget, self).update()
-        if self._ready:
-            self._painter_manager.paint()
-        super(GlWidget, self).update()
+        self._logger.debug('')
+        self.makeCurrent()
+        self.update_model_view_projection_matrix()
+        QOpenGLWidget.update(self)
+
         # self.emit(QtCore.SIGNAL('update()'))
         # if self._ready:
         #     self._update_zoom_status()
@@ -282,8 +283,6 @@ class GlWidget(GlWidgetBase):
             if current_tool is tool_bar.crop_tool_action:
                 self.cropper.end(event) # Fixme: call mouseReleaseEvent
                 self._logger.info(str(self.cropper.interval))
-                text_painter = self._painter_manager['text']
-                text_painter.set_text(self.cropper.interval)
 
     ##############################################
 

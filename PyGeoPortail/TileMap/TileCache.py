@@ -129,9 +129,9 @@ class CachedPyramid(object):
             return obj
         else:
             self._logger.info('Add tile in cache')
-            data = yield from self._data_provider.get_tile(level, row, column)
+            geoportail_tile = yield from self._data_provider.get_tile(level, row, column)
             length = self._pyramid[level].tile_length_m
-            tile = Tile(self._layer_id, level, length, row, column, data)
+            tile = Tile(self._layer_id, level, length, row, column, geoportail_tile.image)
             self._lru_cache.add(tile)
             return tile
 
@@ -140,12 +140,6 @@ class CachedPyramid(object):
     def release(self, level, row, column):
 
         self._lru_cache.release(Tile.tile_key(self._layer_id, level, row, column))
-
-    ##############################################
-
-    def acquire_interval(self, level, interval):
-
-        return [self.acquire(level, row, column)for row, column in interval.iter()]
 
 ####################################################################################################
 #

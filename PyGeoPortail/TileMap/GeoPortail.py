@@ -20,18 +20,23 @@
 
 ####################################################################################################
 
+from io import BytesIO
 import asyncio
 import logging
+import os
 
 # import requests
 from yieldfrom import requests
 
 import numpy as np
 
+from PIL import Image as PilImage
+
 ####################################################################################################
 
 from .Pyramid import Pyramid
 from PyGeoPortail.Image.Image import ImageFormat, Image
+import PyGeoPortail.Config.Config as Config
 
 ####################################################################################################
 
@@ -54,38 +59,39 @@ class GeoPortailTile(object):
 
     ##############################################
 
-    def __init__(self, layer, level, row, column, data):
+    def __init__(self, layer, level, row, column, image=None):
 
         self._layer = layer
         self._level = level
         self._row = row
         self._column = column
-        self._data = data
+        self._image = image
 
     ##############################################
 
-    def to_bytes_io(self):
+    @property
+    def layer(self):
+        return self._layer
 
-        from io import BytesIO
-        
-        return BytesIO(self._data)
+    @property
+    def level(self):
+        return self._level
 
-    ##############################################
+    @property
+    def row(self):
+        return self._row
 
-    def to_pil_image(self):
+    @property
+    def column(self):
+        return self._column
 
-        from PIL import Image
-        
-        return Image.open(self.to_bytes_io())
+    @property
+    def image(self):
+        return self._image
 
-    ##############################################
-
-    def to_image(self):
-
-        array = np.array(self.to_pil_image())
-        image = Image(array, channels=ImageFormat.RGB)
-        
-        return image
+    @image.setter
+    def image(self, image):
+        self._image = image
 
     ##############################################
 
@@ -99,13 +105,35 @@ class GeoPortailTile(object):
         
         return filename
 
+    ##############################################
+
+    def save(self, path=Config.DiskCache.path):
+
+        filename = os.path.join(path, self.filename(with_layer=True, with_level=True))
+        PilImage.fromarray(self._image).save(filename)
+
+    ##############################################
+
+    def on_cache(self, path=Config.DiskCache.path):
+
+        filename = os.path.join(path, self.filename(with_layer=True, with_level=True))
+        return os.path.exists(filename)
+
+    ##############################################
+
+    def load(self, path=Config.DiskCache.path):
+
+        filename = os.path.join(path, self.filename(with_layer=True, with_level=True))
+        array = np.array(PilImage.open(filename))
+        self._image = Image(array, channels=ImageFormat.RGB)
+
 ####################################################################################################
 
 class GeoPortailWTMS(object):
 
     _logger = _module_logger.getChild('GeoPortailWTMS')
 
-    __url_template__ = 'http://wxs.ign.fr/{}/geoportail/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER={}&STYLE=normal&FORMAT={}&TILEMATRIXSET=PM&TILEMATRIX={}&TILEROW={}&TILECOL={}&'
+    __url_template__ = 'https://wxs.ign.fr/{}/geoportail/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER={}&STYLE=normal&FORMAT={}&TILEMATRIXSET=PM&TILEMATRIX={}&TILEROW={}&TILECOL={}&'
 
     ##############################################
 
@@ -117,18 +145,35 @@ class GeoPortailWTMS(object):
 
     ##############################################
 
+    @staticmethod
+    def to_image(data):
+
+        # Fixme: directly save using f.write()
+        array = np.array(PilImage.open(BytesIO(data)))
+        image = Image(array, channels=ImageFormat.RGB)
+        
+        return image
+
+    ##############################################
+
     @asyncio.coroutine
     def _download_layer(self, layer, level, row, column):
 
-        image_format = 'image/jpeg'
-        url = self.__url_template__.format(self._api_key, layer, image_format, level, row, column)
-        self._logger.info('GET ' + url)
+        tile = GeoPortailTile(layer, level, row, column)
+        if tile.on_cache():
+            self._logger.info('Tile on cache ' + tile.filename())
+            tile.load()
+        else:
+            image_format = 'image/jpeg'
+            url = self.__url_template__.format(self._api_key, layer, image_format, level, row, column)
+            self._logger.info('GET ' + url)
+            request = yield from requests.get(url, auth=(self._user, self._password))
+            request.raise_for_status()
+            content = yield from request.content
+            self._logger.info('Completed GET ' + url)
+            tile.image = self.to_image(content)
         
-        request = yield from requests.get(url, auth=(self._user, self._password))
-        request.raise_for_status()
-        content = yield from request.content
-        
-        return GeoPortailTile(layer, level, row, column, content)
+        return tile
 
     ##############################################
 
@@ -173,7 +218,7 @@ class GeoPortailOthorPhotoProvider(GeoPortailProvider):
     def get_tile(self, level, row, column):
 
         tile = yield from self._wtms.download_ortho_photo(level, row, column)
-        return tile.to_image()
+        return tile
 
 ####################################################################################################
 
@@ -185,7 +230,7 @@ class GeoPortailMapProvider(GeoPortailProvider):
     def get_tile(self, level, row, column):
 
         tile = yield from self._wtms.download_map(level, row, column)
-        return tile.to_image()
+        return tile
 
 ####################################################################################################
 #
