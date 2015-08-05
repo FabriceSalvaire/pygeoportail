@@ -37,13 +37,44 @@ from PyOpenGLng.HighLevelApi.GlWidgetBase import GlWidgetBase
 from PyOpenGLng.Math.Interval import IntervalInt2D # duplicated
 
 from PyOpenGLng.Math.Geometry import Vector
-from PyOpenGLng.HighLevelApi.Ortho2D import XAXIS, YAXIS, XYAXIS
+from PyOpenGLng.HighLevelApi.Ortho2D import ZoomManagerAbc, XAXIS, YAXIS, XYAXIS
 
 from PyGeoPortail.GraphicEngine.GraphicScene import GraphicScene
 
 ####################################################################################################
 
 _module_logger = logging.getLogger(__name__)
+
+####################################################################################################
+
+class ZoomManager(ZoomManagerAbc):
+
+    _logger = logging.getLogger(__name__)
+
+    ##############################################
+
+    def __init__(self):
+
+        self.zoom_factor = 1
+        self.pyramid = None
+        self.level = None
+
+    ##############################################
+
+    def check_zoom(self, zoom_factor):
+
+        # Fixme:
+        resolution = 1 / zoom_factor
+        self._logger.debug("{} {}".format(self.pyramid, zoom_factor))
+        if self.pyramid is None:
+            self.zoom_factor = zoom_factor
+            return True, zoom_factor
+        elif resolution >= self.pyramid.smallest_resolution():
+            self.zoom_factor = zoom_factor
+            self.level = self.pyramid.closest_level(resolution)
+            return True, zoom_factor
+        else:
+            return False, self.zoom_factor
 
 ####################################################################################################
 
@@ -68,6 +99,7 @@ class GlWidget(GlWidgetBase):
         
         self.x_step = 1000
         self.y_step = 1000
+        self.zoom_step = 2
         
         # Fixme
         self._ready = False
@@ -85,11 +117,13 @@ class GlWidget(GlWidgetBase):
     def init_glortho2d(self):
 
         # Set max_area so as to correspond to max_binning zoom centered at the origin
+        # Fixme: cf. last level
         area_size = 10**12
         max_area = IntervalInt2D([-area_size, area_size], [-area_size, area_size])
 
-        super(GlWidget, self).init_glortho2d(max_area, zoom_manager=None)
-
+        self._zoom_manager = ZoomManager()
+        super(GlWidget, self).init_glortho2d(max_area, zoom_manager=self._zoom_manager, reverse_y_axis=True)
+        
         self.scene = GraphicScene(self.glortho2d)
 
     ##############################################

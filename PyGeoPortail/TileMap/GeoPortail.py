@@ -164,6 +164,9 @@ class GeoPortailWTMS(object):
             self._logger.info('Tile on cache ' + tile.filename())
             tile.load()
         else:
+            # Fixme: offline
+            # ConnectTimeoutError()
+            # ReadTimeout()
             image_format = 'image/jpeg'
             url = self.__url_template__.format(self._api_key, layer, image_format, level, row, column)
             self._logger.info('GET ' + url)

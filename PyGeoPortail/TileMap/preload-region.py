@@ -50,15 +50,6 @@ geoportail_wtms = GeoPortailWTMS(user='fabrice.salvaire@orange.fr',
                                  api_key='qd58byg78dg3nloou4ksa0pz')
 geoportail_map_provider = GeoPortailMapProvider(geoportail_wtms)
 
-media_dpi = 100
-media_resolution_mm = 25.4 / media_dpi # mm/px
-number_of_pixels_per_m = 1000 / media_resolution_mm
-# top25_resolution = 1 : 25 000
-for level in geoportail_pyramid:
-    print('Level[{}] {:.1f} m  {:.2f} m/px  scale: 1 cm : {:.1f} m / 00 cm'.format(
-        level.level, level.tile_length_m, level.resolution,
-        level.resolution * number_of_pixels_per_m / 100))
-
 longitude = GeoAngle(6, 7, 0)
 latitude = GeoAngle(44, 41, 0)
 location = GeoCoordinate(longitude, latitude)

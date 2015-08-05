@@ -66,6 +66,10 @@ class Tile(object):
     ##############################################
 
     @property
+    def level(self):
+        return self._level
+
+    @property
     def row(self):
         return self._row
 

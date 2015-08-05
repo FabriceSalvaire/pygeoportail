@@ -21,7 +21,11 @@
 ###################################################################################################
 
 import logging
-import os
+
+####################################################################################################
+
+from PyQt5 import QtNetwork
+from PyQt5.QtNetwork import QNetworkConfiguration
 
 ####################################################################################################
 
@@ -54,10 +58,22 @@ class ViewerApplication(GuiApplicationBase):
 
     ##############################################
 
+    def _check_network_configuration(self):
+
+        self._network_manager = QtNetwork.QNetworkConfigurationManager()
+        self._is_online = False # network_manager.isOnline()
+        for network_config in self._network_manager.allConfigurations(QNetworkConfiguration.Active):
+            if network_config.bearerType() != QNetworkConfiguration.BearerUnknown:
+                self._is_online = True
+
+    ##############################################
+
     def post_init(self):
 
         super(ViewerApplication, self).post_init()
-        
+
+        self._check_network_configuration()
+
         glwidget = self._main_window.glwidget
         
         # Fixme: Basic...
@@ -79,19 +95,22 @@ class ViewerApplication(GuiApplicationBase):
         self._geoportail_map_provider = GeoPortailMapProvider(self._geoportail_wtms)
         self._lru_cache = LruCache(constraint=1024**3)
         self._cached_pyramid = CachedPyramid(self._geoportail_map_provider, self._lru_cache)
+        pyramid = self._cached_pyramid._pyramid # Fixme:
         
         from PyGeoPortail.GraphicEngine.MosaicPainter import MosaicPainter
         self._mosaic_painter = MosaicPainter(self.painter_manager, self._cached_pyramid)
         
         glwidget.init_tools() # Fixme: for shader
-        glwidget._ready = True
+        glwidget._zoom_manager.pyramid = pyramid # Fixme:
+        glwidget._ready = True # Fixme:
         
         level = 16
         longitude = GeoAngle(6, 7, 0)
         latitude = GeoAngle(44, 41, 0)
         location = GeoCoordinate(longitude, latitude)
-        x, y = self._cached_pyramid._pyramid[level].coordinate_to_projection(location)
-        glwidget.zoom_at_with_scale(x, y, zoom_factor=1) # Fixme: 1 px : ???
+        pyramid_level = pyramid[level]
+        x, y = pyramid_level.coordinate_to_projection(location)
+        glwidget.zoom_at_with_scale(x, y, zoom_factor=1/pyramid_level.resolution)
 
 ####################################################################################################
 #

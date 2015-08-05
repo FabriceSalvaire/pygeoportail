@@ -20,6 +20,11 @@
 
 ####################################################################################################
 
+import math
+
+####################################################################################################
+
+from PyGeoPortail.Math.Functions import rint
 from PyGeoPortail.Math.Interval import IntervalInt2D
 
 ####################################################################################################
@@ -83,8 +88,27 @@ class Pyramid(object):
 
     ##############################################
 
+    def level_resolution(self, level):
+
+        return self.__root_resolution__ / 2**level
+
+    ##############################################
+
+    def smallest_resolution(self):
+
+        return self.level_resolution(self.__number_of_levels__ -1)
+
+    ##############################################
+
+    def closest_level(self, resolution):
+
+        return rint(math.log(self.__root_resolution__ / resolution) / math.log(2))
+
+    ##############################################
+
     def coordinate_to_projection(self, geo_coordinate):
 
+        # Fixme: to numpy ?
         x0, y0 = self.__offset__
         xm, ym = geo_coordinate.mercator
         x = xm - x0
@@ -103,8 +127,9 @@ class PyramidLevel(object):
         self._pyramid = pyramid
         self._level = level
         self._tile_size = pyramid.tile_size
-        self._mosaic_size = 2**level
-        self._resolution = pyramid.root_resolution / self.mosaic_size
+        self._mosaic_size = 2**level # Fixme: name ?
+        self._resolution = pyramid.level_resolution(level)
+        # self._resolution = pyramid.root_resolution / self.mosaic_size
 
     ##############################################
 

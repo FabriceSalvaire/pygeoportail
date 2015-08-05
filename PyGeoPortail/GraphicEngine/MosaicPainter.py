@@ -105,7 +105,6 @@ class MosaicPainter(Painter):
         self._viewport_area = self._glwidget.glortho2d.viewport_area
         self._shader_program = self._glwidget.shader_manager.texture_shader_program
         
-        self._level = 16
         self._tile_list = []
         self._textures = []
         self._texture_dict = {}
@@ -158,14 +157,15 @@ Texture Cache: recycle
 
     def update(self):
 
-        self._logger.debug('Update Mosaic Painter')
-        
+        level = self._glwidget._zoom_manager.level # Fixme
         texture_cache = self._texture_cache
         cached_pyramid = self._cached_pyramid
         
+        self._logger.debug('Update Mosaic Painter @{}'.format(level))
+        
         # always compute tile list
         old_tile_list = self._tile_list
-        pyramid_level = self._cached_pyramid._pyramid[self._level] # Fixme: zoom -> level
+        pyramid_level = self._cached_pyramid._pyramid[level]
         mosaic_interval = pyramid_level.projection_interval_to_mosaic(self._viewport_area.area)
         self._tile_list = list(mosaic_interval.iter())
         self._logger.debug('Viewport\n' + str(self._tile_list))
@@ -178,13 +178,13 @@ Texture Cache: recycle
         print(self._texture_dict)
         for tile_index in tiles_to_keep:
             row, column = tile_index
-            key = Tile.tile_key(0, self._level, row, column)
+            key = Tile.tile_key(0, level, row, column)
             self._textures.append(self._texture_dict[key])
         self._glwidget.update()
         
         # Get new tiles
         if tiles_to_acquire:
-            tasks = [asyncio.async(cached_pyramid.acquire(self._level, row, column))
+            tasks = [asyncio.async(cached_pyramid.acquire(level, row, column))
                      for row, column in tiles_to_acquire]
             # for task in tasks:
             #     task.add_done_callback(self._task_callback)
@@ -199,8 +199,8 @@ Texture Cache: recycle
         for tile_index in tiles_to_release:
             # Fixme: key
             row, column = tile_index
-            cached_pyramid.release(self._level, row, column)
-            key = Tile.tile_key(0, self._level, row, column)
+            cached_pyramid.release(level, row, column)
+            key = Tile.tile_key(0, level, row, column)
             texture_cache.release(key)
         self.recycle()
         
@@ -214,7 +214,7 @@ Texture Cache: recycle
 
         tile = task.result()
         
-        key = Tile.tile_key(0, self._level, tile.row, tile.column)
+        key = Tile.tile_key(0, tile.level, tile.row, tile.column)
         texture = self._texture_cache.acquire(key)
         if texture is None:
             texture = self._create_texture(tile, key)
@@ -226,7 +226,7 @@ Texture Cache: recycle
     def _create_texture(self, tile, key):
 
         self._logger.debug('Create Texture ' + str(key))
-        position = Point(tile.x, tile.y+tile.length)
+        position = Point(tile.x + .5, tile.y+tile.length + .5)
         image_dimension = Offset(tile.length, -tile.length)
         self._glwidget.makeCurrent() #?
         with GL.error_checker():
