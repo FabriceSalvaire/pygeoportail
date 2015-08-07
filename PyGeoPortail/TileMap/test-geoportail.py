@@ -33,19 +33,15 @@ import asyncio
 
 ####################################################################################################
 
-from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
+from PyGeoPortail.TileMap.GeoPortail import (GeoPortailWebService,
+                                             GeoPortailPyramid,
                                              GeoPortailWTMS,
                                              GeoPortailMapProvider,
                                              GeoPortailOthorPhotoProvider)
-from PyGeoPortail.TileMap.LruCache import LruCache
+
 from PyGeoPortail.TileMap.Projection import GeoAngle, GeoCoordinate
-from PyGeoPortail.TileMap.TileCache import CachedPyramid
 
 ####################################################################################################
-
-geoportail_wtms = GeoPortailWTMS(user='fabrice.salvaire@orange.fr',
-                                 password='fA77Sal(!',
-                                 api_key='qd58byg78dg3nloou4ksa0pz')
 
 geoportail_pyramid = GeoPortailPyramid()
 
@@ -54,41 +50,100 @@ longitude = GeoAngle(6, 7, 0)
 latitude = GeoAngle(44, 41, 0)
 location = GeoCoordinate(longitude, latitude)
 row, column = geoportail_pyramid[level].coordinate_to_mosaic(location)
-print(level, row, column)
 
-x, y = geoportail_pyramid[level].coordinate_to_projection(location)
-from PyGeoPortail.Math.Interval import Interval2D
-interval = Interval2D((x, x + 500), (y, y + 500))
-mosaic_interval = geoportail_pyramid[level].projection_interval_to_mosaic(interval)
-print(mosaic_interval)
-# for row, column in mosaic_interval.iter():
-#     print(row, column)
+user = 'fabrice.salvaire@orange.fr'
+password = 'fA77Sal(!'
+api_key = 'qd58byg78dg3nloou4ksa0pz'
+geoportail_web_service = GeoPortailWebService(user, password, api_key, timeout=120)
+
+print(geoportail_web_service.make_url('geoportail', 'wmts',
+                                      service='WMTS',
+                                      version='1.0.0',
+                                      request='GetTile',
+                                      layer='GEOGRAPHICALGRIDSYSTEMS.MAPS',
+                                      style='normal',
+                                      format='image/jpeg',
+                                      tilematrixset='PM',
+                                      tilematrix=level,
+                                      tilerow=row,
+                                      tilecol=column,
+))
 
 loop = asyncio.get_event_loop()
 
-tile = loop.run_until_complete(geoportail_wtms.download_ortho_photo(level, row, column))
-tile.to_pil_image().save(tile.filename(with_layer=True, with_level=True))
+# print(loop.run_until_complete(geoportail_web_service.async_get('geoportail', 'wmts',
+#                                                                service='WMTS',
+#                                                                version='1.0.0',
+#                                                                request='GetTile',
+#                                                                layer='GEOGRAPHICALGRIDSYSTEMS.MAPS',
+#                                                                style='normal',
+#                                                                format='image/jpeg',
+#                                                                tilematrixset='PM',
+#                                                                tilematrix=level,
+#                                                                tilerow=row,
+#                                                                tilecol=column,
+# )))
 
-geoportail_map_provider = GeoPortailMapProvider(geoportail_wtms)
-tasks = [asyncio.async(geoportail_map_provider.get_tile(level, row, column + i)) for i in range(3)]
-loop.run_until_complete(asyncio.wait(tasks))
+# Could take a while ...
+# print(geoportail_web_service.autoconf(api_key))
 
-lru_cache = LruCache(constraint=1024**3)
+# timeout ???
+# tasks = [asyncio.async(geoportail_web_service.async_autoconf(api_key))]
+# response = loop.run_until_complete(asyncio.wait(tasks, timeout=120))
+# print(response)
 
-def done_callback(future):
-    print('done', future.result())
+xml_query = '''<?xml version="1.0" encoding="UTF-8"?>
+<XLS xmlns:gml="http://www.opengis.net/gml"
+     xmlns="http://www.opengis.net/xls"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     version="1.2"
+     xsi:schemaLocation="http://www.opengis.net/xls http://schemas.opengis.net/ols/1.2/olsAll.xsd">
+  <RequestHeader srsName="epsg:4326"/>
+  <Request maximumResponses="1" methodName="GeocodeRequest" requestID="1" version="1.2">
+    <GeocodeRequest>
+      <Address countryCode="StreetAddress">
+        <freeFormAddress>1 rue Marconi 57000 Metz</freeFormAddress>
+      </Address>
+    </GeocodeRequest>
+  </Request>
+</XLS>'''
 
-cached_pyramid = CachedPyramid(geoportail_map_provider, lru_cache)
-tasks = [asyncio.async(cached_pyramid.acquire(level, row, column + i)) for i in (0, 1, 0)]
-for task in tasks:
-    task.add_done_callback(done_callback)
-loop.run_until_complete(asyncio.wait(tasks))
-cached_pyramid.release(level, row, column)
-lru_cache.recycle()
+# xml_query = '''<?xml version="1.0" encoding="UTF-8"?>
+# <XLS
+#   xmlns:xls="http://www.opengis.net/xls"
+#   xmlns:gml="http://www.opengis.net/gml"
+#   xmlns="http://www.opengis.net/xls"
+#   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+#   version="1.2"
+#   xsi:schemaLocation="http://www.opengis.net/xls http://schemas.opengis.net/ols/1.2/olsAll.xsd">
+#     <RequestHeader/>
+#     <Request requestID="1" version="1.2" methodName="LocationUtilityService">
+#        <GeocodeRequest returnFreeForm="false">
+#          <Address countryCode="PositionOfInterest">
+#                 <freeFormAddress>rennes</freeFormAddress>
+#          </Address>
+#        </GeocodeRequest>
+#     </Request>
+# </XLS>'''
 
-# tiles = cached_pyramid.acquire_interval(level, mosaic_interval)
+# xml_query = '''<?xml version="1.0" encoding="UTF-8"?>
+# <XLS version="1.2" xsi:schemaLocation="http://wxs.ign.fr/schemas/olsAll.xsd" xmlns:xls="http://www.opengis.net/xls" xmlns="http://www.opengis.net/xls" xmlns:xlsext="http://www.opengis.net/xlsext" xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+# <RequestHeader/>
+# <Request requestID="1" version="1.2" methodName="LocationUtilityService">
+# <GeocodeRequest returnFreeForm="false">
+# <Address countryCode="StreetAddress">
+# <StreetAddress>
+# <Street>1 rue Marconi</Street>
+# </StreetAddress>
+# <Place type="Municipality">Metz</Place>
+# <PostalCode>57000</PostalCode>
+# </Address>
+# </GeocodeRequest>
+# </Request>
+# </XLS>'''
 
-loop.close()
+#print(geoportail_web_service.post('geoportail', 'ols', data=xml_query))
+print(geoportail_web_service.get('geoportail', 'ols', xls=xml_query))
 
 ####################################################################################################
 #

@@ -21,12 +21,13 @@
 ####################################################################################################
 
 from io import BytesIO
+from urllib.parse import urlencode, quote
 import asyncio
 import logging
 import os
 
-# import requests
-from yieldfrom import requests
+import requests
+from yieldfrom import requests as async_requests
 
 import numpy as np
 
@@ -126,6 +127,107 @@ class GeoPortailTile(object):
         filename = os.path.join(path, self.filename(with_layer=True, with_level=True))
         array = np.array(PilImage.open(filename))
         self._image = Image(array, channels=ImageFormat.RGB)
+
+####################################################################################################
+
+class GeoPortailWebService(object):
+
+    _logger = _module_logger.getChild('GeoPortailWebService')
+
+    __protocol__ = 'https'
+    __domain__ = 'wxs.ign.fr'
+
+    ##############################################
+
+    def __init__(self, user, password, api_key, timeout=30):
+
+        self._user = user
+        self._password = password
+        self._api_key = api_key
+        self._timeout = timeout
+
+    ##############################################
+
+    @property
+    def user(self):
+        return self._user
+
+    @property
+    def password(self):
+        return self._password
+
+    @property
+    def api_key(self):
+        return self._api_key
+
+    @property
+    def timeout(self):
+        return self._timeout
+
+    ##############################################
+
+    def make_url(self, *args, **kwargs):
+
+        # '&'.join(['{}={}'.format(key.upper(), quote(value))
+        #           for key, value in kwargs.items()])
+        
+        return '{}://{}/{}/{}?{}'.format(self.__protocol__, self.__domain__, self._api_key,
+                                         '/'.join(args), urlencode(kwargs))
+
+    ##############################################
+
+    def get(self, *args, **kwargs):
+
+        url = self.make_url(*args, **kwargs)
+        self._logger.info('GET ' + url)
+        request = requests.get(url, auth=(self._user, self._password), timeout=self._timeout)
+        content = request.text
+        
+        return content
+
+    ##############################################
+
+    @asyncio.coroutine
+    def async_get(self, *args, **kwargs):
+
+        url = self.make_url(*args, **kwargs)
+        self._logger.info('GET ' + url)
+        request = yield from async_requests.get(url, auth=(self._user, self._password), timeout=self._timeout)
+        request.raise_for_status()
+        content = yield from request.content
+        
+        return content
+
+    ##############################################
+
+    def autoconf(self, *keys):
+
+        return self.get('autoconf', keys=','.join(keys))
+
+    @asyncio.coroutine
+    ##############################################
+
+    def async_autoconf(self, *keys):
+
+        # Timeout !
+        return self.async_get('autoconf', keys=','.join(keys))
+
+    ##############################################
+
+    def post(self, *args, **kwargs):
+
+        data = kwargs.pop('data')
+        
+        url = self.make_url(*args, **kwargs)
+        self._logger.info('POST ' + url + '\n' + data)
+        headers = {'Content-Type': 'application/xml'}
+        request = requests.get(url,
+                               data=data, headers=headers,
+                               auth=(self._user, self._password),
+                               timeout=self._timeout)
+        content = request.text
+        
+        return content
 
 ####################################################################################################
 
