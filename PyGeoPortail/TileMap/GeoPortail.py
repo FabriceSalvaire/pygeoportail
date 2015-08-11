@@ -212,23 +212,6 @@ class GeoPortailWebService(object):
         # Timeout !
         return self.async_get('autoconf', keys=','.join(keys))
 
-    ##############################################
-
-    def post(self, *args, **kwargs):
-
-        data = kwargs.pop('data')
-        
-        url = self.make_url(*args, **kwargs)
-        self._logger.info('POST ' + url + '\n' + data)
-        headers = {'Content-Type': 'application/xml'}
-        request = requests.get(url,
-                               data=data, headers=headers,
-                               auth=(self._user, self._password),
-                               timeout=self._timeout)
-        content = request.text
-        
-        return content
-
 ####################################################################################################
 
 class GeoPortailWTMS(object):
