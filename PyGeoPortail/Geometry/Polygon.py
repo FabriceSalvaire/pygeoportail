@@ -29,9 +29,40 @@
 
 ####################################################################################################
 
-from PyGeoPortail.Tools.IterTools import closed_pairwise
+from .Line2D import Line2D
+from .PointSet import interval_of_set_of_points
 from PyGeoPortail.Math.Functions import sign
-from PyGeoPortail.Geometry.PointSet import interval_of_set_of_points
+from PyGeoPortail.Math.Interval import IntervalInt2D
+from PyGeoPortail.Tools.IterTools import closed_pairwise
+
+####################################################################################################
+
+class OpenInterval(object):
+
+    ##############################################
+
+    def __init__(self, x, direction):
+
+        self.x = x
+        self.direction = direction
+
+    ##############################################
+
+    def __lt__(a, b):
+
+        if a == b:
+            return b.direction < a.direction
+        else:
+            return a.x < b.x
+
+    ##############################################
+
+    def __str__(self):
+
+        if self.direction > 0:
+            return '[{}'.format(self.x)
+        else:
+            return '{}]'.format(self.x)
 
 ####################################################################################################
 
@@ -103,6 +134,82 @@ class Polygon(object):
         """ Return the enclosing :class:`PyGeoPortail.Math.Interval.Interval2D` of the polygon. """
 
         return interval_of_set_of_points(self.vertexes)
+
+    ##############################################
+
+    @staticmethod
+    def _to_grid(x, grid_step):
+        return int(x // grid_step)
+
+    ##############################################
+
+    def intersec_with_grid(self, grid_step):
+
+        interval = self.to_interval()
+        interval_on_grid = IntervalInt2D((self._to_grid(interval.x.inf, grid_step),
+                                          self._to_grid(interval.x.sup, grid_step)),
+                                         (self._to_grid(interval.y.inf, grid_step),
+                                          self._to_grid(interval.y.sup, grid_step)))
+        print(interval, interval_on_grid)
+
+        Y_min = interval_on_grid.y.inf
+        rows = [[] for i in range(interval_on_grid.y.length())]
+        for p0, p1 in closed_pairwise(self.vertexes):
+            print('\nEdge', p0, p1)
+            X0, Y0 = self._to_grid(p0.x, grid_step), self._to_grid(p0.y, grid_step)
+            X1, Y1 = self._to_grid(p1.x, grid_step), self._to_grid(p1.y, grid_step)
+            print('({}, {}) -> ({}, {})'.format(X0, Y0, X1, Y1))
+
+            line = Line2D.from_two_points(p0, p1)
+
+            if Y0 == Y1:
+                pass
+            elif Y1 > Y0:
+                rows[Y0 - Y_min].append(OpenInterval(X0, 1))
+                for Y in range(Y0 +1, Y1 +1):
+                    y = Y * grid_step
+                    x = line.get_x_from_y(y)
+                    X = self._to_grid(x, grid_step)
+                    YY = Y - Y_min
+                    if X1 < X0:
+                        YY -= 1
+                    open_interval = OpenInterval(X, 1)
+                    print(Y, x, y, X, YY, open_interval)
+                    rows[YY].append(open_interval)
+                rows[Y1 - Y_min].append(OpenInterval(X1, 1))
+            elif Y1 < Y0:
+                rows[Y1 - Y_min].append(OpenInterval(X1, -1))
+                for Y in range(Y1 +1, Y0 +1):
+                    y = Y * grid_step
+                    x = line.get_x_from_y(y)
+                    X = self._to_grid(x, grid_step)
+                    YY = Y - Y_min
+                    if X1 < X0:
+                        YY -= 1
+                    open_interval = OpenInterval(X, -1)
+                    print(Y, x, y, X, YY, open_interval)
+                    rows[YY].append(open_interval)
+                rows[Y0 - Y_min].append(OpenInterval(X0, -1))
+
+        h_lines = []
+        for i, row in enumerate(rows):
+            row.sort()
+            Y = Y_min + i
+            print('{}: {}'.format(Y, ' '.join([str(x) for x in row])))
+            # Fixme: state machine ???
+            # previous_open_interval = row[0]
+            # simplified_row = [previous_open_interval]
+            # for open_interval in row[1:]:
+            #     if ((open_interval.x - previous_open_interval.x > 1)
+            #         and (open_interval.direction != previous_open_interval.direction)):
+            #         simplified_row.append(open_interval)
+            #         previous_open_interval = open_interval
+            # if simplified_row[-1].x != row[-1].x:
+            #     simplified_row.append(row[-1])
+            # print('    ' + ' '.join([str(x) for x in simplified_row]))
+            h_lines.append((Y, row[0].x, row[-1].x))
+        
+        return h_lines
 
 ####################################################################################################
 #

@@ -27,9 +27,9 @@ from PyGeoPortail.Tools.RangeTracker import MinMaxFilter
 
 def interval_of_set_of_points(points):
 
-    """ Return the enclosing :class:`GVLab.Math.Interval.Interval2D` of a set of points. The
+    """ Return the enclosing :class:`PyGeoPortail.Math.Interval.Interval2D` of a set of points. The
     argument *points* must be an iterable and the point instance must have the :attr:`x` and
-    :attr:`y` (cf. :class:`GVLab.Geometry.Vector2D`).
+    :attr:`y` (cf. :class:`PyGeoPortail.Geometry.Vector2D`).
     """
 
     x = MinMaxFilter()

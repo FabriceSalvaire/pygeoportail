@@ -25,20 +25,36 @@ def rint(f):
 
 ####################################################################################################
 
-def even(n):
-    return n & 1 == 0
+def middle(a, b):
+    return .5*(a + b)
 
-def odd(n):
-    return n & 1 == 1
+####################################################################################################
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 # Fixme: sign_of ?
 def sign(x):
     return cmp(x, 0)
 
+def epsilon_float(a, b, epsilon = 1e-3):
+    return abs(a-b) <= epsilon
+
+def trignometric_clamp(x):
+
+    """ Clamp *x* in the range [-1.,1]. """
+
+    if x > 1.:
+        return 1.
+    elif x < -1.:
+        return -1.
+    else:
+        return x
+
 ####################################################################################################
 
-def middle(a, b):
-    return .5*(a + b)
+def is_in_trignometric_range(x):
+    return -1. <= x <= 1
 
 ####################################################################################################
 #

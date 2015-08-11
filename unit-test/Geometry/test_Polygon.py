@@ -22,6 +22,8 @@
 
 import unittest
 
+import numpy as np
+
 ####################################################################################################
 
 from PyGeoPortail.Geometry.Polygon import *
@@ -33,7 +35,8 @@ class TestPolygon(unittest.TestCase):
 
     ##############################################
 
-    def test(self):
+    @unittest.skip
+    def test_point_inside(self):
 
         # Square of diagonal 2*size and centered on the origin
         size = 10
@@ -77,6 +80,43 @@ class TestPolygon(unittest.TestCase):
         # Point outside
         p0 = Vector2D(20,20)
         self.assertFalse(p0 in polygon)
+
+    ##############################################
+
+    # @unittest.skip
+    def test_grid(self):
+
+        points = (
+            (1.2, 1.2),
+            (0.2, 5.2),
+            (2.2, 7.2),
+            (5.2, 2.2),
+            (7.2, 8.2),
+            (10.2, 8.2),
+            (13.2, 10.2),
+            (15.2, 7.2),
+            (18.2, 6.2),
+            (18.2, 4.2),
+            (15.2, 3.2),
+        )
+        
+        polygon = Polygon([Vector2D(x, y) for x, y in points])
+        grid_step = 1.
+        h_lines = polygon.intersec_with_grid(grid_step)
+
+        import matplotlib.pyplot as plt
+        xs = [x for x, y in points]
+        ys = [y for x, y in points]
+        xs.append(xs[0])
+        ys.append(ys[0])
+        plt.plot(xs, ys, 'o-')
+        for y, x_inf, x_sup in h_lines:
+            yy = y + .5
+            plt.plot((x_inf, x_sup + 1), (yy, yy), '-', color='r')
+        plt.xticks(np.arange(min(xs)//grid_step -1, max(xs)//grid_step +2))
+        plt.yticks(np.arange(min(ys)//grid_step -1, max(ys)//grid_step +2))
+        plt.grid(True)
+        plt.show()
 
 ####################################################################################################
 
