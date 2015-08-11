@@ -148,7 +148,7 @@ class PainterMetaClass(type):
 
 ####################################################################################################
 
-class RegisteredPainter(Painter, metaclass = PainterMetaClass):
+class RegisteredPainter(Painter, metaclass=PainterMetaClass):
     pass
 
 ####################################################################################################

@@ -28,8 +28,7 @@ from .Painter import PainterMetaClass
 
 ####################################################################################################
 
-# Fixme:
-class BasicPainterManager(object):
+class PainterManager(object):
 
     _logger = logging.getLogger(__name__)
 
@@ -105,7 +104,6 @@ class BasicPainterManager(object):
 
     def paint(self):
 
-        # self._logger.info(str(self._sorted_painters))
         for painter in self._sorted_painters:
             painter.paint()
 

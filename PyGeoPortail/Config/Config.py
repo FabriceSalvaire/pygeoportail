@@ -22,10 +22,6 @@
 
 import os
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
-
 ####################################################################################################
 
 class Path(object):
@@ -37,10 +33,9 @@ class Path(object):
 
 ####################################################################################################
 
-class Email(object):
+class DiskCache(object):
 
-    from_address = 'fabrice.salvaire@orange.fr'
-    to_address = ['fabrice.salvaire@orange.fr',]
+    path = os.path.join(os.environ['HOME'], '.cache', 'pygeoportail')
 
 ####################################################################################################
 
@@ -49,12 +44,6 @@ class Help(object):
     host = 'localhost'
     url_scheme = 'http'
     url_path_pattern = '/'
-
-####################################################################################################
-
-class DiskCache(object):
-
-    path = os.path.join(os.environ['HOME'], '.cache', 'pygeoportail')
 
 ####################################################################################################
 #

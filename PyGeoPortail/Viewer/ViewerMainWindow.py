@@ -60,33 +60,12 @@ class ViewerMainWindow(MainWindowBase):
 
         icon_loader = IconLoader()
 
-        self._refresh_action = \
-                QtWidgets.QAction(# icon_loader[''],
-                    'Refresh',
-                    self,
-                    toolTip='Refresh',
-                    triggered=self.glwidget.update,
-                    shortcut='Ctrl+R',
-                    shortcutContext=Qt.ApplicationShortcut,
-                )
-
-        self._display_all_action = \
-                QtWidgets.QAction(# icon_loader[''],
-                    'Display All',
-                    self,
-                    toolTip='Display All',
-                    triggered=self.glwidget.display_all,
-                    shortcut='Ctrl+A',
-                    shortcutContext=Qt.ApplicationShortcut,
-                )
-
     ##############################################
 
     def _create_toolbar(self):
 
         self._image_tool_bar = self.addToolBar('Main')
-        for item in (self._refresh_action,
-                     self._display_all_action,
+        for item in (
                     ):
             if isinstance(item,QtWidgets.QAction):
                 self._image_tool_bar.addAction(item)

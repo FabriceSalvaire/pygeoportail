@@ -117,7 +117,7 @@ class GraphicScene(object):
         return self.items_in(point_interval(x, y))
 
     ##############################################
-    
+
     def items_around(self, x, y, radius):
 
         return self.items_in(centred_interval(x, y, radius))

@@ -77,8 +77,8 @@ class ViewerApplication(GuiApplicationBase):
         glwidget = self._main_window.glwidget
         
         # Fixme: Basic...
-        from PyGeoPortail.GraphicEngine.PainterManager import BasicPainterManager
-        self.painter_manager = BasicPainterManager(glwidget)
+        from PyGeoPortail.GraphicEngine.PainterManager import PainterManager
+        self.painter_manager = PainterManager(glwidget)
         
         from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
                                                      GeoPortailWTMS,

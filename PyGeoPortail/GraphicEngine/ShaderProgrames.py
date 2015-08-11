@@ -25,7 +25,6 @@ import os
 ####################################################################################################
 
 from PyOpenGLng.HighLevelApi.Shader import GlShaderManager, GlShaderProgramInterface
-from PyOpenGLng.HighLevelApi.RandomTexture import GlRandomTexture, GlRandomTextureShaderProgram
 
 ####################################################################################################
 
@@ -56,8 +55,6 @@ text_shader_program_interface = GlShaderProgramInterface(uniform_blocks=('viewpo
                                                                      'glyph_size',
                                                                      'position_uv',
                                                                      'colour'))
-
-random_texture = GlRandomTexture(size=1000, texture_unit=1)
 
 if shader_manager.has_visual():
     

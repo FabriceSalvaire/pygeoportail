@@ -55,16 +55,16 @@ loggers:
 # Modules
 #
 
-  PyGeoPortail:
-    level: DEBUG
-    #level: INFO
-    #level: WARNING
-    handlers: [console]
-
   PyOpenGLng:
     #level: DEBUG
     #level: INFO
     level: WARNING
+    handlers: [console]
+
+  PyGeoPortail:
+    level: DEBUG
+    #level: INFO
+    #level: WARNING
     handlers: [console]
 
 ####################################################################################################
