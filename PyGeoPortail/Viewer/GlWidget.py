@@ -154,8 +154,13 @@ class GlWidget(GlWidgetBase):
 
     def update_model_view_projection_matrix(self):
 
+        # from PyOpenGLng.Math.Transforms import identity, translate, rotate_z, rotate
+        # center = self.viewport_area.center()
+        # model_matrix = translate(rotate_z(translate(identity(), -center[0], -center[1], 0), 10) , center[0], center[1], 0)
+        # matrix = np.dot(matrix, model_matrix)
+
         self._logger.debug(str(self.glortho2d))
-        viewport_uniform_buffer_data = self.glortho2d.viewport_uniform_buffer_data(self.size(), flip_y=True)
+        viewport_uniform_buffer_data = self.glortho2d.viewport_uniform_buffer_data(self.size())
         self._viewport_uniform_buffer.set(viewport_uniform_buffer_data)
 
     ##############################################
