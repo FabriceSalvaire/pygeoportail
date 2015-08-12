@@ -36,7 +36,7 @@ from PyOpenGLng.Math.Geometry import Point, Offset
 ####################################################################################################
 
 from .Painter import Painter
-from PyGeoPortail.GraphicEngine.ShaderProgrames import texture_shader_program_interface
+from PyGeoPortail.GraphicEngine.ShaderProgrames import program_interfaces
 from PyGeoPortail.TileMap.LruCache import LruCache
 from PyGeoPortail.TileMap.TileCache import Tile
 from PyGeoPortail.Tools.ListArithmetic import split_list
@@ -231,7 +231,7 @@ Texture Cache: recycle
         self._glwidget.makeCurrent() #?
         with GL.error_checker():
             texture = Texture(key, position, image_dimension, tile.image)
-            texture.bind_to_shader(texture_shader_program_interface.attributes)
+            texture.bind_to_shader(program_interfaces['texture_shader_program_interface'].attributes)
         self._texture_cache.add(texture, acquire=True)
         
         return texture

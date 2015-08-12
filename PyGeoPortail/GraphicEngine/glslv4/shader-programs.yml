@@ -1,0 +1,47 @@
+interfaces:
+
+  position_shader_program_interface:
+    uniform_blocks:
+      - viewport
+    attributes:
+      - position
+
+  texture_shader_program_interface:
+    uniform_blocks:
+      - viewport
+    attributes:
+      - position
+      - position_uv
+
+  text_shader_program_interface:
+    uniform_blocks:
+      - viewport
+    attributes:
+      - position
+      - glyph_size
+      - position_uv
+      - colour
+
+programs:
+
+  fixed_shader_program:
+    shaders:
+      - fixed_colour_vertex_shader
+      - simple_fragment_shader
+    interface:
+      texture_shader_program_interface
+
+  texture_shader_program:
+    shaders:
+      - texture_vertex_shader
+      - texture_fragment_shader
+    interface:
+      texture_shader_program_interface
+
+  text_shader_program:
+    shaders:
+      - text_vertex_shader
+      - text_geometry_shader
+      - text_fragment_shader
+      interface:
+      text_shader_program_interface

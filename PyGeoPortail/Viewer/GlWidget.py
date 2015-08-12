@@ -143,7 +143,7 @@ class GlWidget(GlWidgetBase):
 
         from PyGeoPortail.GraphicEngine import ShaderProgrames as ShaderProgrames
         self.shader_manager = ShaderProgrames.shader_manager
-        self.position_shader_interface = ShaderProgrames.position_shader_program_interface
+        self.position_shader_interface = ShaderProgrames.program_interfaces['position_shader_program_interface']
 
         # Fixme: share interface
         self._viewport_uniform_buffer = GlUniformBuffer()
