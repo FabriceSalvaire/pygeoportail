@@ -34,7 +34,9 @@ import numpy as np
 from PyOpenGLng.HighLevelApi import GL
 from PyOpenGLng.HighLevelApi.Buffer import GlUniformBuffer
 from PyOpenGLng.HighLevelApi.GlWidgetBase import GlWidgetBase
+from PyOpenGLng.HighLevelApi.Ortho2D import Ortho2D
 from PyOpenGLng.Math.Interval import IntervalInt2D # duplicated
+from PyOpenGLng.Math.Transforms import identity, translate, rotate_z, rotate
 
 from PyOpenGLng.Math.Geometry import Vector
 from PyOpenGLng.HighLevelApi.Ortho2D import ZoomManagerAbc, XAXIS, YAXIS, XYAXIS
@@ -78,6 +80,56 @@ class ZoomManager(ZoomManagerAbc):
 
 ####################################################################################################
 
+class RotatedOrtho2D(Ortho2D):
+
+    ##############################################
+
+    def __init__(self, *args, **kwargs):
+
+        super(RotatedOrtho2D, self).__init__(*args, **kwargs)
+        self._bearing = 0
+
+    ##############################################
+
+    @property
+    def bearing(self):
+        return self._bearing
+
+    @bearing.setter
+    def bearing(self, value):
+        self._bearing = value % 360
+
+    ##############################################
+
+    def rotate(self, angle):
+
+        self._bearing = (self._bearing + angle) % 360
+
+    ##############################################
+
+    def model_matrix(self):
+
+        if abs(self._bearing) <= .1:
+            return identity()
+        else:
+            center = self.viewport_area.center()
+            model_matrix = translate(rotate_z(translate(identity(), -center[0], -center[1], 0),
+                                              self._bearing),
+                                     center[0], center[1], 0)
+            return model_matrix
+
+    ##############################################
+
+    def view_matrix(self):
+
+        # Fixme: model_view or split in shader ?
+        view_matrix = super(RotatedOrtho2D, self).view_matrix()
+        matrix = np.dot(view_matrix, self.model_matrix())
+
+        return matrix
+
+####################################################################################################
+
 class GlWidget(GlWidgetBase):
 
     _logger = _module_logger.getChild('GlWidget')
@@ -100,6 +152,7 @@ class GlWidget(GlWidgetBase):
         self.x_step = 1000
         self.y_step = 1000
         self.zoom_step = 2
+        self.rotation_step = 10
         
         # Fixme
         self._ready = False
@@ -120,9 +173,9 @@ class GlWidget(GlWidgetBase):
         # Fixme: cf. last level
         area_size = 10**12
         max_area = IntervalInt2D([-area_size, area_size], [-area_size, area_size])
-
+        
         self._zoom_manager = ZoomManager()
-        super(GlWidget, self).init_glortho2d(max_area, zoom_manager=self._zoom_manager, reverse_y_axis=True)
+        self.glortho2d = RotatedOrtho2D(max_area, self._zoom_manager, self, bottom_up_y_axis=False)
         
         self.scene = GraphicScene(self.glortho2d)
 
@@ -153,11 +206,6 @@ class GlWidget(GlWidgetBase):
     ##############################################
 
     def update_model_view_projection_matrix(self):
-
-        # from PyOpenGLng.Math.Transforms import identity, translate, rotate_z, rotate
-        # center = self.viewport_area.center()
-        # model_matrix = translate(rotate_z(translate(identity(), -center[0], -center[1], 0), 10) , center[0], center[1], 0)
-        # matrix = np.dot(matrix, model_matrix)
 
         self._logger.debug(str(self.glortho2d))
         viewport_uniform_buffer_data = self.glortho2d.viewport_uniform_buffer_data(self.size())
@@ -230,6 +278,19 @@ class GlWidget(GlWidgetBase):
             zoom_factor /= self.zoom_step
         
         self.glortho2d.zoom_at_with_scale(position, zoom_factor)
+        self.update_painter_manager()
+
+    ##############################################
+
+    def wheel_rotate(self, event):
+
+        self._logger.debug('Wheel Rotate')
+        
+        delta = event.angleDelta().y()
+        rotation_step = self.rotation_step
+        if delta == 120:
+            rotation_step *= -1
+        self.glortho2d.rotate(rotation_step)
         self.update_painter_manager()
 
     ##############################################
@@ -327,7 +388,10 @@ class GlWidget(GlWidgetBase):
 
     def wheelEvent(self, event):
 
-        return self.wheel_zoom(event)
+        if event.modifiers() == QtCore.Qt.ControlModifier:
+            return self.wheel_rotate(event)
+        else:
+            return self.wheel_zoom(event)
 
     ##############################################
 
