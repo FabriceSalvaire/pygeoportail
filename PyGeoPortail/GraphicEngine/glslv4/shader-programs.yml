@@ -43,5 +43,5 @@ programs:
       - text_vertex_shader
       - text_geometry_shader
       - text_fragment_shader
-      interface:
+    interface:
       text_shader_program_interface

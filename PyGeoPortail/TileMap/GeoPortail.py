@@ -255,7 +255,7 @@ class GeoPortailWTMS(object):
             image_format = 'image/jpeg'
             url = self.__url_template__.format(self._api_key, layer, image_format, level, row, column)
             self._logger.info('GET ' + url)
-            request = yield from requests.get(url, auth=(self._user, self._password))
+            request = yield from async_requests.get(url, auth=(self._user, self._password))
             request.raise_for_status()
             content = yield from request.content
             self._logger.info('Completed GET ' + url)
