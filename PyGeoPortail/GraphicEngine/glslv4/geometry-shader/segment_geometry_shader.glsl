@@ -40,8 +40,8 @@ in VertexAttributesIn
 out VertexAttributes
 {
   vec2 uv;
-  float line_width;
   float line_length;
+  float line_width;
   vec4 colour;
   float cap;
 } vertex;

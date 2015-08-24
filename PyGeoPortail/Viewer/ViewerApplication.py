@@ -24,7 +24,8 @@ import logging
 
 ####################################################################################################
 
-from PyQt5 import QtNetwork
+from PyQt5 import QtGui, QtNetwork
+from PyQt5.QtCore import Qt
 from PyQt5.QtNetwork import QNetworkConfiguration
 
 ####################################################################################################
@@ -100,6 +101,9 @@ class ViewerApplication(GuiApplicationBase):
         from PyGeoPortail.GraphicEngine.MosaicPainter import MosaicPainter
         self._mosaic_painter = MosaicPainter(self.painter_manager, self._cached_pyramid)
         
+        from PyGeoPortail.GraphicEngine.PathPainter import PathPainter
+        self._path_painter = PathPainter(self.painter_manager)
+        
         glwidget.init_tools() # Fixme: for shader
         glwidget._zoom_manager.pyramid = pyramid # Fixme:
         glwidget._ready = True # Fixme:
@@ -111,6 +115,17 @@ class ViewerApplication(GuiApplicationBase):
         pyramid_level = pyramid[level]
         x, y = pyramid_level.coordinate_to_projection(location)
         glwidget.zoom_at_with_scale(x, y, zoom_factor=1/pyramid_level.resolution)
+
+        from PyGeoPortail.GraphicEngine.Path import Path
+        import numpy as np
+        s = 256
+        points = np.array([(x + i*215, y + j*256) for i, j in
+                           ((0, 0), (1, 1), (1, 2), (3, 4))])
+        colour = QtGui.QColor(Qt.blue)
+        colour = (colour.red(), colour.green(), colour.blue())
+        path = Path(colour, 10, points)
+        self._path_painter.add_item(path)
+        glwidget.update()
 
 ####################################################################################################
 #

@@ -45,3 +45,19 @@ programs:
       - text_fragment_shader
     interface:
       text_shader_program_interface
+
+  # segment_shader_program:
+  #   shaders:
+  #     - fixed_colour_vertex_shader_in
+  #     - segment_geometry_shader
+  #     - antialiased_segment_fragment_shader
+  #   interface:
+  #     position_shader_program_interface
+
+  path_shader_program:
+    shaders:
+      - fixed_colour_vertex_shader_in
+      - path_geometry_shader
+      - antialiased_path_fragment_shader
+    interface:
+      position_shader_program_interface
