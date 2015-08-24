@@ -22,12 +22,19 @@
 
 import numpy as np
 
+import cv2
+
 ####################################################################################################
 
 class ImageFormat(object):
 
     RGB = ('red', 'green', 'blue')
     BGR = ('blue', 'green', 'red')
+    HLS = ('hue', 'luminosity', 'saturation')
+
+    Gray = ('intensity',)
+    Label = ('label',) # should be unsigned integer
+    Binary = ('mask',) # boolean interpretation
 
     ##############################################
 
@@ -316,12 +323,132 @@ class Image(np.ndarray):
 
     def set(self, value):
 
+        # cv2 ?
+        # cv.Set(self, value)
         self[...] = value
 
     ##############################################
 
     def clear(self):
         self.set(0)
+
+    ##############################################
+
+    def to_normalised_float(self, float_image=None, double=False):
+
+        if float_image is None:
+            if double:
+                data_type = np.float64
+            else:
+                data_type = np.float32
+            float_image = self.__class__(self, data_type=data_type, normalised=True)
+        else:
+            float_image[...] = self
+        float_image *= 1./self.image_format.sup
+
+        return float_image
+
+    ##############################################
+
+    def convert_colour(self, channels, hls_image=None):
+
+        # Fixme: check hls_image
+
+        image_format = self.image_format
+        if channels is ImageFormat.HLS:
+            if image_format.channels is ImageFormat.RGB:
+                if image_format.is_unsigned_integer:
+                    float_image = self.to_normalised_float()
+                    if hls_image is None:
+                        hls_image = self.__class__(float_image, share=True, channels=ImageFormat.HLS)
+                elif image_format.is_float and image_format.normalised:
+                    float_image = self
+                    if hls_image is None:
+                        hls_image = self.__class__(image_format, channels=ImageFormat.HLS)
+                else:
+                    raise NotImplementedError
+                # Fixme: catch error
+                cv2.cvtColor(float_image, cv2.COLOR_RGB2HLS, hls_image)
+                hls_image[:,:,0] *= 1./360 # normalised float, else have to define sup !
+                return hls_image
+            else:
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    ##############################################
+
+    def swap_channels(self, channels):
+
+        image_format = self.image_format
+        if ((channels is ImageFormat.BGR and image_format.channels is ImageFormat.RGB) or 
+            (channels is ImageFormat.RGB and image_format.channels is ImageFormat.BGR)):
+            output = self.__class__(image_format, channels=channels)
+            cv2.mixChannels([self], [output], (0,2, 1,1, 2,0))
+            return output
+            # ???
+        else:
+            raise NotImplementedError
+
+    ##############################################
+
+    def split_channels(self):
+
+        channel_arrays = cv2.split(self)
+        image_format = self.image_format
+        return [self.__class__(channel_array, share=True, number_of_channels=1, channels=(channel,))
+                for channel, channel_array in zip(image_format.channels, channel_arrays)]
+
+        # cv2.merge(mv)
+
+    ##############################################
+
+    def flip_vertically(self):
+
+        cv2.flip(self, 0, self)
+
+    ##############################################
+
+    def flip_horizontally(self):
+
+        cv2.flip(self, 1, self)
+
+    ##############################################
+
+    def transpose(self):
+
+        output = self.__class__(self.image_format.transpose())
+        cv2.transpose(self, output)
+        return output
+
+    ##############################################
+
+    def histogram(self, channels=[0], inf=None, sup=None, number_of_bins=None):
+
+        # Fixme: Histogram.py vs cv
+
+        number_of_channels = len(channels)
+        _channels = []
+        for channel in channels:
+            if isinstance(channel, str):
+                channel = self.image_format[channel]
+            _channels.append(channel)
+        
+        # if binnings is not None
+        image_format = self.image_format
+        if inf is None:
+            inf = image_format.inf
+        if sup is None:
+            sup = image_format.sup
+        intervals = [inf, sup]*number_of_channels
+
+        if number_of_bins is None:
+            number_of_bins = sup - inf
+        _number_of_bins = [number_of_bins]*number_of_channels
+        
+        # mask = None
+        histogram = cv2.calcHist([self], _channels, None, _number_of_bins, intervals)
+        return histogram
 
 ####################################################################################################
 #

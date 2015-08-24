@@ -97,23 +97,16 @@ hsl_filter(vec3 texel)
   /* fragment_colour = vec4(s, s, s, 1.); */
   /* fragment_colour = vec4(l, l, l, 1.); */
 
-  float track_inf = 80. / 360.;
-  float track_sup = 170. / 360.;
-  float high_ligth = .45;
-  float low_light = .25;
-
-  if (h >= track_inf && h <= track_sup) // green && l < high_ligth
-    /* if (l > 120/255.) */
-    /*   fragment_colour = vec4(1, 0, 0, 1); */
-    /* else */
-    fragment_colour = vec4(0, texel.g, 0, 1);
-  /* else if (l > high_ligth) // white */
-  /*   fragment_colour = vec4(1, 0, 0, 1); */
-  /* else if (l < low_light) // black */
-  /*   fragment_colour = vec4(0, 0, 1, 1); */
+  /* float level_line_inf = 5. / 360.; */
+  /* float level_line_sup = 50. / 360.; */
+  float level_line_inf = 70. / 360.;
+  float level_line_sup = 180. / 360.;
+  
+  if (h >= level_line_inf && h <= level_line_sup
+      && l > .25 && s > .10)
+    fragment_colour = vec4(texel, 1);
   else
-    // fragment_colour = vec4(h, s, l, 1.)
-    fragment_colour = vec4(1, 1, 0, 1.);
+    fragment_colour = vec4(1);
 }
 
 /* *********************************************************************************************** */
@@ -121,24 +114,24 @@ hsl_filter(vec3 texel)
 void main()
 {
   vec3 texel = texture(texture0, vertex.uv).rgb;
-
-  /* hsl_filter(texel); */
+  
   fragment_colour = vec4(texel, 1.);
 
-  /* if (texel.b < 20/255.) */
-  /*   fragment_colour = vec4(1); */
-  /* else if (texel.b > 60/255.) */
-  /*   fragment_colour = vec4(1, 0, 0, 1); */
-  /* else */
-  /*   fragment_colour = vec4(texel, 1.); */
-
+  // float g = min(texel.g, .6);
+  // // fragment_colour = vec4(g, g, g, 1.);
+  // // float l = 1 - max(max(texel.r, texel.g), texel.b);
+  // float l = 1 - (texel.r + texel.g + texel.b)/3.;
+  // // if (l < .1)
+  // //   l = 1;
+  // fragment_colour = vec4(l, l, l, 1.);
+  
+  // hsl_filter(texel);
+  
   /* vec4 hsv = rgb_to_hsl(texel); */
-
   /* float h = hsv.x; */
   /* float s = hsv.y; */
   /* float l = hsv.z; */
   /* float chroma = hsv.a; */
-
   /* fragment_colour = vec4(h, s, l, 1.); */
 }
 
