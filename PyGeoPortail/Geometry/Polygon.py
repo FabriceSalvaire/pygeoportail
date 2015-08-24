@@ -19,20 +19,11 @@
 ####################################################################################################
 
 ####################################################################################################
-#
-#                                              Audit
-#
-# - 12/03/2012 Fabrice
-#   - is this algorithm true for concave/convex polygon ?
-#
-####################################################################################################
-
-####################################################################################################
 
 from .Line2D import Line2D
 from .PointSet import interval_of_set_of_points
 from PyGeoPortail.Math.Functions import sign
-from PyGeoPortail.Math.Interval import IntervalInt2D
+from PyGeoPortail.Math.Interval import IntervalInt, IntervalInt2D
 from PyGeoPortail.Tools.IterTools import closed_pairwise
 
 ####################################################################################################
@@ -64,6 +55,12 @@ class OpenInterval(object):
         else:
             return '{}]'.format(self.x)
 
+    ##############################################
+
+    def is_gap(self, other):
+
+        return other.direction < 0 and self.direction > 0 and (self.x - other.x) >= 2 # ] [
+
 ####################################################################################################
 
 class Polygon(object):
@@ -93,7 +90,7 @@ class Polygon(object):
             array = args[0]
         else:
             array = args
-
+        
         return array
 
     ##############################################
@@ -115,6 +112,8 @@ class Polygon(object):
 
         """ Test if the point is inside the polygon. """
 
+        # Fixme: Is this algorithm true for concave/convex polygon ?
+
         # The point is inside the polygon if it is always on the same edge side.  Thus the cross
         # sign must not change.
         cross_sign = None
@@ -124,7 +123,7 @@ class Polygon(object):
                 cross_sign = edge_cross_sign
             elif edge_cross_sign != cross_sign:
                 return False
-        else:
+        else: # Fixme:
             return True
 
     ##############################################
@@ -150,18 +149,18 @@ class Polygon(object):
                                           self._to_grid(interval.x.sup, grid_step)),
                                          (self._to_grid(interval.y.inf, grid_step),
                                           self._to_grid(interval.y.sup, grid_step)))
-        print(interval, interval_on_grid)
-
+        # print(interval, interval_on_grid)
+        
         Y_min = interval_on_grid.y.inf
         rows = [[] for i in range(interval_on_grid.y.length())]
         for p0, p1 in closed_pairwise(self.vertexes):
-            print('\nEdge', p0, p1)
+            # print('\nEdge', p0, p1)
             X0, Y0 = self._to_grid(p0.x, grid_step), self._to_grid(p0.y, grid_step)
             X1, Y1 = self._to_grid(p1.x, grid_step), self._to_grid(p1.y, grid_step)
-            print('({}, {}) -> ({}, {})'.format(X0, Y0, X1, Y1))
-
+            # print('({}, {}) -> ({}, {})'.format(X0, Y0, X1, Y1))
+            
             line = Line2D.from_two_points(p0, p1)
-
+            
             if Y0 == Y1:
                 pass
             elif Y1 > Y0:
@@ -174,7 +173,7 @@ class Polygon(object):
                     if X1 < X0:
                         YY -= 1
                     open_interval = OpenInterval(X, 1)
-                    print(Y, x, y, X, YY, open_interval)
+                    # print(Y, x, y, X, YY, open_interval)
                     rows[YY].append(open_interval)
                 rows[Y1 - Y_min].append(OpenInterval(X1, 1))
             elif Y1 < Y0:
@@ -187,29 +186,48 @@ class Polygon(object):
                     if X1 < X0:
                         YY -= 1
                     open_interval = OpenInterval(X, -1)
-                    print(Y, x, y, X, YY, open_interval)
+                    # print(Y, x, y, X, YY, open_interval)
                     rows[YY].append(open_interval)
                 rows[Y0 - Y_min].append(OpenInterval(X0, -1))
-
-        h_lines = []
+        
+        runs = []
         for i, row in enumerate(rows):
             row.sort()
             Y = Y_min + i
-            print('{}: {}'.format(Y, ' '.join([str(x) for x in row])))
-            # Fixme: state machine ???
-            # previous_open_interval = row[0]
-            # simplified_row = [previous_open_interval]
-            # for open_interval in row[1:]:
-            #     if ((open_interval.x - previous_open_interval.x > 1)
-            #         and (open_interval.direction != previous_open_interval.direction)):
-            #         simplified_row.append(open_interval)
-            #         previous_open_interval = open_interval
-            # if simplified_row[-1].x != row[-1].x:
-            #     simplified_row.append(row[-1])
-            # print('    ' + ' '.join([str(x) for x in simplified_row]))
-            h_lines.append((Y, row[0].x, row[-1].x))
+            # print('{}: {}'.format(Y, ' '.join([str(x) for x in row])))
+            previous_interval = row[0]
+            x_inf = previous_interval.x
+            intervals = [IntervalInt(x_inf, x_inf)]
+            for open_interval in row[1:]:
+                if open_interval.is_gap(previous_interval):
+                    x_inf = open_interval.x
+                    intervals.append(IntervalInt(x_inf, x_inf))
+                else:
+                    intervals[-1].sup = open_interval.x
+                previous_interval = open_interval
+            # print('    ' + ' '.join([str(x) for x in intervals]))
+            # runs.append((Y, IntervalInt(row[0].x, row[-1].x)))
+            for interval in intervals:
+                runs.append((Y, interval))
         
-        return h_lines
+        return TilePolygon(self, runs)
+
+####################################################################################################
+
+class TilePolygon(object):
+
+    ##############################################
+
+    def __init__(self, polygon, runs):
+
+        self.polygon = polygon
+        self._runs = runs
+
+    ##############################################
+
+    def __iter__(self):
+
+        return iter(self._runs)
 
 ####################################################################################################
 #

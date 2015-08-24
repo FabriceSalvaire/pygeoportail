@@ -102,7 +102,7 @@ class TestPolygon(unittest.TestCase):
         
         polygon = Polygon([Vector2D(x, y) for x, y in points])
         grid_step = 1.
-        h_lines = polygon.intersec_with_grid(grid_step)
+        tile_polygon = polygon.intersec_with_grid(grid_step)
 
         import matplotlib.pyplot as plt
         xs = [x for x, y in points]
@@ -110,7 +110,8 @@ class TestPolygon(unittest.TestCase):
         xs.append(xs[0])
         ys.append(ys[0])
         plt.plot(xs, ys, 'o-')
-        for y, x_inf, x_sup in h_lines:
+        for y, x_interval in tile_polygon:
+            x_inf, x_sup = x_interval.inf, x_interval.sup
             yy = y + .5
             plt.plot((x_inf, x_sup + 1), (yy, yy), '-', color='r')
         plt.xticks(np.arange(min(xs)//grid_step -1, max(xs)//grid_step +2))
