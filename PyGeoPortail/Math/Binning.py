@@ -20,7 +20,7 @@
 
 ####################################################################################################
 
-__all__ = ['Binning1D']
+__all__ = ['NDMixin', 'Binning1D', 'BinningND']
 
 ####################################################################################################
 
@@ -33,6 +33,53 @@ from .Functions import rint
 
 ####################################################################################################
 
+####################################################################################################
+
+class NDMixin(object):
+
+    ##############################################
+
+    def __init__(self, *objs):
+
+        self._objs = list(objs)
+
+    ##############################################
+
+    @property
+    def x(self):
+        return self._objs[0]
+
+    ##############################################
+
+    @property
+    def y(self):
+        return self._objs[1]
+
+    ##############################################
+
+    @property
+    def dimension(self):
+        return len(self._objs)
+
+    ##############################################
+
+    def __len__(self):
+        return len(self._objs)
+
+    ##############################################
+
+    def __iter__(self):
+
+        return iter(self._objs)
+
+    ##############################################
+
+    def __getitem__(self, i):
+
+        return self._objs[i]
+
+####################################################################################################
+
 class Binning1D(object):
 
     _under_flow_bin = 0
@@ -40,7 +87,7 @@ class Binning1D(object):
 
     ##############################################
 
-    def __init__(self, interval, bin_width=None, number_of_bins=None,):
+    def __init__(self, interval, bin_width=None, number_of_bins=None):
 
         if bin_width is None and number_of_bins is None:
             raise ValueError("...")
@@ -147,6 +194,21 @@ class Binning1D(object):
 
     ##############################################
 
+    def to_json(self):
+
+        return {'inf':self.interval.inf,
+                'sup':self.interval.sup,
+                'bin_width':self.bin_width}
+
+    ##############################################
+
+    @staticmethod
+    def from_json(data):
+
+        return Binning1D(Interval(data['inf'], data['sup']), bin_width=data['bin_width'])
+
+    ##############################################
+
     def bin_interval(self, i):
 
         if i == self._under_flow_bin:
@@ -209,9 +271,9 @@ class Binning1D(object):
     def bin_iterator(self, xflow=False):
 
         if xflow:
-            return range(self._under_flow_bin, self._array_size)
+            return xrange(self._under_flow_bin, self._array_size)
         else:
-            return range(self._first_bin, self._over_flow_bin)
+            return xrange(self._first_bin, self._over_flow_bin)
 
    ###############################################
 
@@ -258,6 +320,30 @@ Binning 1D
     def sub_binning(self, interval):
 
         return self.__class__(interval, self._bin_width)
+
+####################################################################################################
+
+class BinningND(NDMixin):
+
+    ##############################################
+
+    def find_bin(self, *args):
+
+        # Numpy index must be a tuple
+        return tuple([binning.find_bin(x) for binning, x in zip(self, args)])
+
+    ##############################################
+
+    def bin_slice(self, xflow=False):
+
+        return [binning.bin_slice(xflow) for binning in self]
+
+    ##############################################
+
+    @property
+    def bin_centers(self):
+
+        return [binning.bin_centers for binning in self]
 
 ####################################################################################################
 #
