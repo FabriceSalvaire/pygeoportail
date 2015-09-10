@@ -2,6 +2,97 @@
 
 title Qt Location - Class Diagram
 
+
+class QGeoTiledMapOsm {
+}
+QGeoTiledMapOsm <-up- QGeoTiledMap
+
+
+class QGeoTiledMap {
+ coordinateToItemPosition()
+ itemPositionToCoordinate()
+ prefetchData()
+ prefetchTiles()
+ requestManager() -> QGeoTileRequestManager
+ resized()
+ tileCache() -> QGeoTileCache
+ updateSceneGraph(QSGNode)
+ updateTile(QGeoTileSpec)
+ .. Slots ..
+ evaluateCopyrights()
+ updateMapVersion()
+ .. Signals ..
+}
+QGeoTiledMap <-up- QGeoMap
+QGeoTiledMap *-- QGeoCameraTiles
+QGeoTiledMap *-- QGeoMapScene
+QGeoTiledMap *-- QGeoTileCache
+QGeoTiledMap *-- QGeoTileRequestManager
+
+
+class QGeoMap {
+ height
+ width
+
+ cameraCapabilities()
+ changeActiveMapType()
+ changeCameraData()
+ coordinateToItemPosition()
+ itemPositionToCoordinate()
+ prefetchData()
+ resize()
+ setCameraData()
+ updateSceneGraph()
+ .. Slots ..
+ update()
+ .. Signals ..
+ cameraDataChanged()
+ updateRequired()
+ activeMapTypeChanged()
+ copyrightsChanged()
+}
+QGeoMap o-- QGeoCameraData
+QGeoMap o-- QGeoMapType
+QGeoMap *-- QGeoMapController
+QGeoMap *-- QGeoMappingManagerEngine
+
+
+class QGeoMapController {
+ pan()
+ setAltitude()
+ setBearing()
+ setCenter()
+ setLatitude()
+ setLongitude()
+ setRoll()
+ setTilt()
+ setZoom()
+ .. Slots ..
+ .. Signals ..
+ bearingChanged()
+ cameraDataChanged()
+ centerChanged()
+ rollChanged()
+ tiltChanged()
+ zoomChanged()
+}
+QGeoMapController o-- QGeoCameraData
+QGeoMapController *-- QGeoMap
+
+
+class QGeoTileCache {
+ disk_cache
+ memory_cache
+ texture_cache
+
+ get(QGeoTileSpec) -> QGeoTileTexture
+ insert(QGeoTileSpec, QByteArray, format)
+ .. Slots ..
+ .. Signals ..
+}
+QGeoTileCache o-- QCache3Q
+
+
 class QCache3Q {
  clear()
  deserializeQueue(queueNumber, QList<Key>, QList<QSharedPointer<T> > &values, QList<int> &costs)
@@ -13,109 +104,10 @@ class QCache3Q {
  setMaxCost()
  setPromoteAt()
  totalCost()
+ .. Slots ..
+ .. Signals ..
 }
 
-class QGeoCameraCapabilities {
- max_tilt
- max_zoom
- min_tilt
- min_zoom
- supports_bearing
- supports_rolling
- supports_tilting
-}
-
-class QGeoCameraData {
- bearing
- center -> QGeoCoordinate
- roll
- tilt
- zoom_level
-}
-
-class QGeoTileSpec {
- map_id
- plugin -> QString
- version
- x
- y
- zoom
-}
-
-class QGeoMapType {
-}
-
-class QGeoMapController {
- bearingChanged()
- cameraDataChanged()
- centerChanged()
- pan()
- rollChanged()
- setAltitude()
- setBearing()
- setCenter()
- setLatitude()
- setLongitude()
- setRoll()
- setTilt()
- setZoom()
- tiltChanged()
- zoomChanged()
-}
-QGeoMapController *-- QGeoMap
-QGeoMapController o-- QGeoCameraData
-
-class QGeoMap {
- height
- width
-
- activeMapTypeChanged()
- cameraCapabilities()
- cameraDataChanged()
- changeActiveMapType()
- changeCameraData()
- coordinateToItemPosition()
- copyrightsChanged()
- copyrightsChanged()
- itemPositionToCoordinate()
- prefetchData()
- resize()
- setCameraData()
- update()
- updateRequired()
- updateSceneGraph()
-}
-QGeoMap *-- QGeoMappingManagerEngine
-QGeoMap *-- QGeoMapController
-QGeoMap o-- QGeoCameraData
-QGeoMap o-- QGeoMapType
-
-class QGeoTiledMap {
- coordinateToItemPosition()
- evaluateCopyrights()
- itemPositionToCoordinate()
- prefetchData()
- requestManager()
- tileCache()
- updateMapVersion()
- updateSceneGraph()
- updateTile()
-}
-QGeoTiledMap <-- QGeoMap
-QGeoTiledMap *-- QGeoTileCache
-QGeoTiledMap *-- QGeoCameraTiles
-QGeoTiledMap *-- QGeoMapScene
-QGeoTiledMap *-- QGeoTileRequestManager
-
-class QGeoTileCache {
- disk_cache
- memory_cache
- texture_cache
-
-get(QGeoTileSpec)
- insert()
-}
-QGeoTileCache o-- QCache3Q
 
 class QGeoCameraTiles {
  prefetchTiles() -> QSet<QGeoTileSpec>
@@ -128,12 +120,28 @@ class QGeoCameraTiles {
  setTileSize()
  tileSize()
  visibleTiles() -> QSet<QGeoTileSpec>
+ .. Private ..
+ appendZIntersects()
+ clipFootprintToMap()
+ createFrustum()
+ frustumFootprint()
+ splitPolygonAtAxisValue()
+ tileIntersections()
+ tilesFromPolygon()
+ updateGeometry()
+ updateMetadata()
+ .. Slots ..
+ .. Signals ..
 }
-QGeoCameraTiles o-- QGeoMapType
 QGeoCameraTiles o-- QGeoCameraData
+QGeoCameraTiles o-- QGeoMapType
 QGeoCameraTiles *-- "many" QGeoTileSpec
 
+
 class QGeoMapScene {
+ m_visibleTiles QSet<QGeoTileSpec>
+ m_textures QHash<QGeoTileSpec, QGeoTileTexture>>
+ --
  addTile(QGeoTileSpec, QGeoTileTexture)
  itemPositionToMercator()
  mercatorToItemPosition()
@@ -142,53 +150,110 @@ class QGeoMapScene {
  setScreenSize()
  setTileSize()
  setUseVerticalLock()
- setVisibleTiles()
+ setVisibleTiles(QSet< QGeoTileSpec>)
  texturedTiles() -> QSet<QGeoTileSpec>
  updateSceneGraph()
  verticalLock()
+ .. Private ..
+ buildGeometry()
+ removeTiles()
+ setTileBounds()
+ setupCamera()
+ .. Slots ..
+ .. Signals ..
 }
 QGeoMapScene o-- QGeoCameraData
 QGeoMapScene *-- "many" QGeoTileSpec
 QGeoMapScene *-- "many" QGeoTileTexture
 
-class QGeoTileRequestManager {
- requestTiles(QSet<QGeoTileSpec>) -> QList<QSharedPointer<QGeoTileTexture>>
- tileError(QGeoTileSpec, QString)
- tileFetched(QGeoTileSpec)
- tileTexture(QGeoTileSpec) -> QSharedPointer<QGeoTileTexture>
-}
-QGeoTileRequestManager *-- QGeoTiledMap
-QGeoTileRequestManager *-- QGeoTiledMappingManagerEngine
-QGeoTileRequestManager *-- "requested/futures/retries" QGeoTileSpec
 
-class QGeoTileFetcher {
- queue -> QList<QGeoTileSpec>
- cancelTileRequests(QSet<QGeoTileSpec>)
- finished()
- requestNextTile()
- tileError(QGeoTileSpec, QString)
- tileFinished(QGeoTileSpec, QByteArray, QString &format)
- updateTileRequests(QSet<QGeoTileSpec> &tilesAdded, QSet<QGeoTileSpec> &tilesRemoved)
+class QGeoServiceProvider {
+ availableServiceProviders()
+ --
+ geocodingFeatures() -> GeocodingFeatures
+ geocodingManager() -> QGeoCodingManager
+ mappingFeatures() -> MappingFeatures
+ mappingManager() -> QGeoMappingManager
+ placeManager() -> QPlaceManager
+ placesFeatures() -> PlacesFeatures
+ routingFeatures() ->  RoutingFeatures
+ routingManager() -> QGeoRoutingManager
+ setLocale()
+ setParameters()
+ .. Private ..
+ loadMeta()
+ loadPlugin()
+ manager() -> Manager
+ unload()
+ .. Slots ..
+ .. Signals ..
 }
+QGeoServiceProvider *-- QGeoMappingManager
+QGeoServiceProvider *-- QGeoServiceProviderFactory
+
+class QGeoServiceProviderFactory {
+ createMappingManagerEngine(parameters, ...) -> QGeoMappingManagerEngine
+ .. Slots ..
+ .. Signals ..
+}
+QGeoServiceProviderFactory -up-> QGeoServiceProviderFactoryOsm
 
 class QGeoMappingManager {
  cameraCapabilities() -> QGeoCameraCapabilities
  createMap() -> QGeoMap
- initialized()
  isInitialized()
  managerName()
  managerVersion()
  setLocale()
  supportedMapTypes() -> QList<QGeoMapType>
+ .. Slots ..
+ .. Signals ..
+ initialized()
 }
 QGeoMappingManager *-- QGeoMappingManagerEngine
+
+
+class QGeoTileRequestManager {
+ m_engine QGeoTiledMappingManagerEngine
+ m_futures QHash<QGeoTileSpec, RetryFuture>
+ m_map QGeoTiledMap
+ m_requested QSet<QGeoTileSpec>
+ m_retries QHash<QGeoTileSpec, int>
+ --
+ requestTiles(QSet<QGeoTileSpec>) -> QList<QSharedPointer<QGeoTileTexture>>
+ tileError(QGeoTileSpec, QString)
+ tileFetched(QGeoTileSpec)
+ tileTexture(QGeoTileSpec) -> QSharedPointer<QGeoTileTexture>
+ .. Slots ..
+ .. Signals ..
+}
+QGeoTileRequestManager *-- QGeoTiledMap
+QGeoTileRequestManager *-- QGeoTiledMappingManagerEngine
+QGeoTileRequestManager *-- "many" QGeoTileSpec
+
+
+class QGeoTiledMappingManagerEngine {
+ cacheHint_
+ fetcher_ QGeoTileFetcher
+ mapHash_ QHash<QGeoTiledMap *, QSet<QGeoTileSpec>>
+ tileCache_ QGeoTileCache
+ tileHash_ QHash<QGeoTileSpec, QSet<QGeoTiledMap *>>
+ tileMaps_ QSet<QGeoTiledMap *>
+ tileSize_
+ .. Slots ..
+ .. Signals ..
+ tileError()
+ mapVersionChanged()
+}
+QGeoTiledMappingManagerEngine <-up- QGeoMappingManagerEngine
+
 
 class QGeoMappingManagerEngine {
  tileSize
  tileMaps -> QSet<QGeoTiledMap *>
  mapHash -> QHash<QGeoTiledMap *, QSet<QGeoTileSpec>>
  tileHash -> QHash<QGeoTileSpec, QSet<QGeoTiledMap *>>
-
+ --
  createMap() -> QGeoMap
  createTileCacheWithDir(QString) -> QGeoTileCache
  deregisterMap(QGeoMap)
@@ -205,34 +270,68 @@ class QGeoMappingManagerEngine {
  tileFetcher() -> QGeoTileFetcher
  tileSize()
  updateTileRequests(QGeoTiledMap, QSet<QGeoTileSpec> &tilesAdded, QSet<QGeoTileSpec> &tilesRemoved)
+ .. Slots ..
+ .. Signals ..
+ initialized()
 }
 QGeoMappingManagerEngine *-- QGeoTileCache
 QGeoMappingManagerEngine *-- QGeoTileFetcher
 
-class QGeoTiledMappingManagerEngine {
-}
-QGeoTiledMappingManagerEngine <-- QGeoMappingManagerEngine
 
-class QGeoServiceProviderFactory {
- QGeoMappingManagerEngine * createMappingManagerEngine(parameters, ...)
+class QGeoTileFetcher {
+ queue -> QList<QGeoTileSpec>
+ cancelTileRequests(QSet<QGeoTileSpec>)
+ finished()
+ requestNextTile()
+ tileError(QGeoTileSpec, QString)
+ tileFinished(QGeoTileSpec, QByteArray, QString &format)
+ updateTileRequests(QSet<QGeoTileSpec> &tilesAdded, QSet<QGeoTileSpec> &tilesRemoved)
+ .. Slots ..
+ .. Signals ..
 }
 
-class QGeoServiceProvider {
- RoutingFeatures routingFeatures()
- GeocodingFeatures geocodingFeatures()
- MappingFeatures mappingFeatures()
- PlacesFeatures placesFeatures()
- QGeoCodingManager *geocodingManager()
- QGeoMappingManager *mappingManager()
- QGeoRoutingManager *routingManager()
- QPlaceManager *placeManager()
+
+class QGeoCameraCapabilities {
+ max_tilt
+ max_zoom
+ min_tilt
+ min_zoom
+ supports_bearing
+ supports_rolling
+ supports_tilting
+ .. Slots ..
+ .. Signals ..
 }
-QGeoServiceProvider *-- QGeoMappingManager
-QGeoServiceProvider *-- QGeoServiceProviderFactory
+
+
+class QGeoCameraData {
+ bearing
+ center -> QGeoCoordinate
+ roll
+ tilt
+ zoom_level
+ .. Slots ..
+ .. Signals ..
+}
+
+
+class QGeoTileSpec {
+ map_id
+ plugin -> QString
+ version
+ x
+ y
+ zoom
+}
+
 
 class QGeoTileTexture {
  QGeoTileSpec spec
  QImage image
+}
+
+
+class QGeoMapType {
 }
 
 @enduml
