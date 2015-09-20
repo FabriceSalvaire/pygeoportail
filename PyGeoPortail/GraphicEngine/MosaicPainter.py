@@ -166,6 +166,8 @@ Texture Cache: recycle
         # always compute tile list
         old_tile_list = self._tile_list
         pyramid_level = self._cached_pyramid._pyramid[level]
+        # Fixme: return rotated area
+        # compute intersection
         mosaic_interval = pyramid_level.projection_interval_to_mosaic(self._viewport_area.area)
         self._tile_list = list(mosaic_interval.iter())
         self._logger.debug('Viewport\n' + str(self._tile_list))
@@ -225,16 +227,34 @@ Texture Cache: recycle
 
     def _create_texture(self, tile, key):
 
-        self._logger.debug('Create Texture ' + str(key))
-        position = Point(tile.x + .5, tile.y+tile.length + .5)
-        image_dimension = Offset(tile.length, -tile.length)
+        self._logger.debug('Create Texture ' + str(key) +
+                           ' Tile position: {} {} {} {} {}'.format(tile.row, tile.column,
+                                                                   tile.x, tile.y,
+                                                                   tile.length))
+        # position = Point(tile.x, tile.y+tile.length)
+        # image_dimension = Offset(tile.length, -tile.length)
+        row_inf, column_inf = 23600, 33800
+        position = Point(tile.column -column_inf, tile.row +1 -row_inf)
+        image_dimension = Offset(1, -1)
         self._glwidget.makeCurrent() #?
         with GL.error_checker():
-            texture = Texture(key, position, image_dimension, tile.image)
+            image = tile.image
+            self._paint_border(image)
+            texture = Texture(key, position, image_dimension, image)
             texture.bind_to_shader(program_interfaces['texture_shader_program_interface'].attributes)
         self._texture_cache.add(texture, acquire=True)
         
         return texture
+
+    ##############################################
+
+    @staticmethod
+    def _paint_border(image, colour1=(255, 0, 0), colour2=(0, 0, 255)):
+
+        image[0,:] = colour1
+        image[-1,:] = colour2
+        image[:,0] = colour1
+        image[:,-1] = colour2
 
     ##############################################
 

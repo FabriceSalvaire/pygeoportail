@@ -63,6 +63,12 @@ class ZoomManager(ZoomManagerAbc):
 
     ##############################################
 
+    @property
+    def pyramid_level(self):
+        return self.pyramid[self.level]
+
+    ##############################################
+
     def check_zoom(self, zoom_factor):
 
         # Fixme:
@@ -122,11 +128,37 @@ class RotatedOrtho2D(Ortho2D):
 
     def view_matrix(self):
 
-        # Fixme: model_view or split in shader ?
-        view_matrix = super(RotatedOrtho2D, self).view_matrix()
-        matrix = np.dot(view_matrix, self.model_matrix())
+        """ Return the view matrix. """
 
+        offset = self.viewport_area.center() * -1.
+        scale = 2. / self.viewport_area.size()
+        offset *= scale
+        if self.zoom_manager.level is not None:
+            tile_length_m = self.zoom_manager.pyramid_level.tile_length_m
+            scale *= tile_length_m
+            offset += np.array((33800, 23600)) * scale
+        
+        scale *= self._gl_axis_parity
+        offset *= self._gl_axis_parity
+        
+        # x' = s*x + o
+        matrix = np.array([[ scale[0], 0.,       0., offset[0] ],
+                           [ 0.,       scale[1], 0., offset[1] ],
+                           [ 0.,       0.,       1.,        0. ],
+                           [ 0.,       0.,       0.,        1. ]],
+                          dtype=np.float32)
+        
         return matrix
+
+    ##############################################
+
+    # def view_matrix(self):
+
+    #     # Fixme: model_view or split in shader ?
+    #     view_matrix = super(RotatedOrtho2D, self).view_matrix()
+    #     matrix = np.dot(view_matrix, self.model_matrix())
+
+    #     return matrix
 
 ####################################################################################################
 

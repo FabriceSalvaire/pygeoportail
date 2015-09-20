@@ -124,6 +124,12 @@ class Painter(object):
 
     ##############################################
 
+    def update(self):
+        # Fixme:
+        pass
+
+    ##############################################
+
     def paint(self):
         raise NotImplementedError
 
