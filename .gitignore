@@ -1,6 +1,8 @@
 *~
+*.o
+*.so
 __pycache__
 big-image.jpg
 doc/sphinx/build/
 doc/sphinx/source/api/
-
+PyGeoPortail/Proj4/_proj4.c
