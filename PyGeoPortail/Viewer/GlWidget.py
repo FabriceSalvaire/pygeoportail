@@ -133,10 +133,10 @@ class RotatedOrtho2D(Ortho2D):
         offset = self.viewport_area.center() * -1.
         scale = 2. / self.viewport_area.size()
         offset *= scale
-        if self.zoom_manager.level is not None:
-            tile_length_m = self.zoom_manager.pyramid_level.tile_length_m
-            scale *= tile_length_m
-            offset += np.array((33800, 23600)) * scale
+        # if self.zoom_manager.level is not None:
+        #     tile_length_m = self.zoom_manager.pyramid_level.tile_length_m
+        #     scale *= tile_length_m
+        #     offset += np.array((33800, 23600)) * scale
         
         scale *= self._gl_axis_parity
         offset *= self._gl_axis_parity

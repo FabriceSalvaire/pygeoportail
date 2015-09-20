@@ -231,11 +231,11 @@ Texture Cache: recycle
                            ' Tile position: {} {} {} {} {}'.format(tile.row, tile.column,
                                                                    tile.x, tile.y,
                                                                    tile.length))
-        # position = Point(tile.x, tile.y+tile.length)
-        # image_dimension = Offset(tile.length, -tile.length)
-        row_inf, column_inf = 23600, 33800
-        position = Point(tile.column -column_inf, tile.row +1 -row_inf)
-        image_dimension = Offset(1, -1)
+        position = Point(tile.x +.5, tile.y + tile.length +.5)
+        image_dimension = Offset(tile.length, -tile.length)
+        # row_inf, column_inf = 23600, 33800
+        # position = Point(tile.column -column_inf, tile.row +1 -row_inf +.5)
+        # image_dimension = Offset(1, -1)
         self._glwidget.makeCurrent() #?
         with GL.error_checker():
             image = tile.image
