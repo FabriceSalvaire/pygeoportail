@@ -1,0 +1,84 @@
+#! /usr/bin/env python
+
+####################################################################################################
+#
+# PyGeoPortail - A IGN GeoPortail Map Viewer
+# Copyright (C) 2015 Fabrice Salvaire
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+####################################################################################################
+
+####################################################################################################
+#
+# Logging
+#
+
+import PyGeoPortail.Logging.Logging as Logging
+
+logger = Logging.setup_logging('pygeoportail')
+
+####################################################################################################
+
+import argparse
+
+####################################################################################################
+
+from PyGeoPortail.TileMap.GeoPortail import (GeoPortailWebService,
+                                             GeoPortailPyramid,
+                                             GeoPortailWTMS,
+                                             GeoPortailMapProvider,
+                                             GeoPortailOthorPhotoProvider)
+
+from PyGeoPortail.TileMap.Projection import GeoAngle, GeoCoordinate
+
+####################################################################################################
+#
+# Options
+#
+
+argument_parser = argparse.ArgumentParser(description='PyGeoPortail Browser')
+
+argument_parser.add_argument('--longitude',
+                             type=float,
+                             default=None,
+                             help='Longitude')
+
+argument_parser.add_argument('--latitude',
+                             type=float,
+                             default=None,
+                             help='Latitude')
+
+args = argument_parser.parse_args()
+
+####################################################################################################
+
+geoportail_pyramid = GeoPortailPyramid()
+
+longitude = GeoAngle(args.longitude)
+latitude = GeoAngle(args.latitude)
+location = GeoCoordinate(longitude, latitude)
+
+print('longitude, latitude:', location)
+print('Mercator x, y:', location.mercator)
+print('IGN x, y:', geoportail_pyramid.coordinate_to_projection(location))
+for level in geoportail_pyramid:
+    row, column = level.coordinate_to_mosaic(location)
+    print(level.level, row, column)
+
+####################################################################################################
+#
+# End
+#
+####################################################################################################
