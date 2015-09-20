@@ -9,7 +9,10 @@ with open(xml_path) as f:
     xml_document = f.read()
 xml_document = bytes(xml_document, encoding='utf8')
 
-autoconf_parser = AutoConfParser(xml_document)
+autoconf_parser = AutoConfParser()
+autoconf = autoconf_parser.parse_document(xml_document)
+
+print(autoconf.to_json())
 
 ####################################################################################################
 #

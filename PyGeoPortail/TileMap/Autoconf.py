@@ -37,18 +37,24 @@ class JsonAble(object):
         if isinstance(value, list):
             return [self._jsonify(x) for x in value]
         elif isinstance(value, JsonAble):
-            return value.to_json()
+            return value.to_dict()
         else:
             return value
 
     ##############################################
 
-    def to_json(self):
+    def to_dict(self):
 
         d = {}
         for key, value in self.__dict__.items():
                 d[key] = self._jsonify(value)
         return d
+
+    ##############################################
+
+    def to_json(self):
+
+        return json.dumps(self.to_dict(), indent=2)
 
 ####################################################################################################
 
@@ -178,11 +184,9 @@ class AutoConfParser(object):
 
     ##############################################
 
-    def __init__(self, xml_document):
+    def __init__(self):
 
-        self._xml_parser = QXmlStreamReader(xml_document)
-        # xml_parser.setDevice(xml_document)
-        self._parse_document()
+        self._xml_parser = None
 
     ##############################################
 
@@ -264,7 +268,34 @@ class AutoConfParser(object):
 
     ##############################################
 
-    def _parse_document(self):
+    def _read_int(self, name):
+
+        return int(self._read_text(name))
+
+    ##############################################
+
+    def _read_float(self, name):
+
+        return float(self._read_text(name))
+
+    ##############################################
+
+    def _read_int_list(self, name, sep=','):
+
+        return [int(x) for x in self._read_text(name).split(sep)]
+
+    ##############################################
+
+    def _read_float_list(self, name, sep=','):
+
+        return [float(x) for x in self._read_text(name).split(sep)]
+
+    ##############################################
+
+    def parse_document(self, xml_document):
+
+        self._xml_parser = QXmlStreamReader(xml_document)
+        # xml_parser.setDevice(xml_document)
 
         autoconf = AutoConf()
         if self._xml_parser.readNext() != QXmlStreamReader.StartDocument:
@@ -282,7 +313,10 @@ class AutoConfParser(object):
                     self._raise()
         if self._xml_parser.readNext() != QXmlStreamReader.EndDocument:
             self._raise()
-        print(json.dumps(autoconf.to_json(), indent=2))
+        
+        self._xml_parser = None
+        
+        return autoconf
 
     ##############################################
 
@@ -404,13 +438,13 @@ class AutoConfParser(object):
                 elif name == 'AdditionalCRS':
                     territory.additional_crs.append(self._read_text('AdditionalCRS'))
                 elif name == 'BoundingBox':
-                    territory.bounding_box = [float(x) for x in self._read_text('BoundingBox').split(',')]
+                    territory.bounding_box = self._read_float_list('BoundingBox', sep=',')
                 elif name == 'MinScaleDenominator':
-                    territory.min_scale_denominator = float(self._read_text('MinScaleDenominator'))
+                    territory.min_scale_denominator = self._read_float('MinScaleDenominator')
                 elif name == 'MaxScaleDenominator':
-                    territory.max_scale_denominator = float(self._read_text('MaxScaleDenominator'))
+                    territory.max_scale_denominator = self._read_float('MaxScaleDenominator')
                 elif name == 'Resolution':
-                    territory.resolution = float(self._read_text('Resolution'))
+                    territory.resolution = self._read_float('Resolution')
                 elif name == 'Center':
                     territory.center = self._parse_Center()
                 elif name == 'DefaultLayers':
@@ -433,9 +467,9 @@ class AutoConfParser(object):
             if self._xml_parser.isStartElement():
                 name = self._xml_parser.name()
                 if name == 'x':
-                    x = float(self._read_text('x'))
+                    x = self._read_float('x')
                 elif name == 'y':
-                    y = float(self._read_text('y'))
+                    y = self._read_float('y')
                 else:
                     self._raise()
 
@@ -495,7 +529,7 @@ class AutoConfParser(object):
             if self._xml_parser.isStartElement():
                 name = self._xml_parser.name()
                 if name == 'Identifier':
-                    tile_matrix_set.identifier = int(self._read_text('Identifier'))
+                    tile_matrix_set.identifier = self._read_text('Identifier')
                 elif name == 'SupportedCRS':
                     tile_matrix_set.supported_crs = self._read_text('SupportedCRS')
                 elif name == 'TileMatrix':
@@ -524,19 +558,19 @@ class AutoConfParser(object):
             if self._xml_parser.isStartElement():
                 name = self._xml_parser.name()
                 if name == 'Identifier':
-                    tile_matrix.identifier = int(self._read_text('Identifier'))
+                    tile_matrix.identifier = self._read_int('Identifier')
                 elif name == 'ScaleDenominator':
-                    tile_matrix.scale_denominator = float(self._read_text('ScaleDenominator'))
+                    tile_matrix.scale_denominator = self._read_float('ScaleDenominator')
                 elif name == 'TopLeftCorner':
-                    tile_matrix.top_left_corner = [int(x) for x in self._read_text('TopLeftCorner').split()]
+                    tile_matrix.top_left_corner = self._read_int_list('TopLeftCorner', sep=' ')
                 elif name == 'TileWidth':
-                    tile_matrix.tile_width = int(self._read_text('TileWidth'))
+                    tile_matrix.tile_width = self._read_int('TileWidth')
                 elif name == 'TileHeight':
-                    tile_matrix.tile_height = int(self._read_text('TileHeight'))
+                    tile_matrix.tile_height = self._read_int('TileHeight')
                 elif name == 'MatrixWidth':
-                    tile_matrix.matrix_width = int(self._read_text('MatrixWidth'))
+                    tile_matrix.matrix_width = self._read_int('MatrixWidth')
                 elif name == 'MatrixHeight':
-                    tile_matrix.matrix_height = int(self._read_text('MatrixHeight'))
+                    tile_matrix.matrix_height = self._read_int('MatrixHeight')
                 else:
                     self._raise()
 
@@ -546,7 +580,7 @@ class AutoConfParser(object):
 
     def _parse_Resolutions(self):
 
-        return [float(x) for x in self._read_text('Resolutions').split(',')]
+        return self._read_float_list('Resolutions', sep=',')
 
     ##############################################
 
@@ -618,9 +652,9 @@ class AutoConfParser(object):
                 elif name == 'Abstract':
                     layer.abstract = self._read_text('Abstract')
                 elif name == 'MinScaleDenominator':
-                    layer.min_scale_denominator = float(self._read_text('MinScaleDenominator'))
+                    layer.min_scale_denominator = self._read_float('MinScaleDenominator')
                 elif name == 'MaxScaleDenominator':
-                    layer.max_scale_denominator = float(self._read_text('MaxScaleDenominator'))
+                    layer.max_scale_denominator = self._read_float('MaxScaleDenominator')
                 elif name == 'FormatList':
                     self._parse_FormatList()
                 elif name == 'StyleList':
