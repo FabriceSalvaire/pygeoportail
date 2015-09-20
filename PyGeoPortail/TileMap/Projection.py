@@ -56,6 +56,12 @@ class GeoAngle(object):
 
     ##############################################
 
+    def __str__(self):
+
+        return str(self._value)
+
+    ##############################################
+
     @property
     def decimal(self):
 
@@ -74,6 +80,9 @@ class GeoAngle(object):
 
 class GeoCoordinate(object):
 
+    # Equatorial radius (half major axis) of the ellipsoid
+    equatorial_radius = 6378137.0 # m
+
     ##############################################
 
     def __init__(self, longitude, latitude):
@@ -88,14 +97,19 @@ class GeoCoordinate(object):
 
         # epsg:3857
         
-        # Equatorial radius (half major axis) of the ellipsoid
-        R = 6378137.0 # m
-        
-        x = R * math.radians(float(self.longitude.decimal))
-        y = R * math.log(math.tan(math.radians(self.latitude.decimal)/2 + math.pi/4))
+        x = math.radians(float(self.longitude.decimal))
+        y = math.log(math.tan(math.radians(self.latitude.decimal)/2 + math.pi/4))
+        x *= self.equatorial_radius
+        y *= self.equatorial_radius
         # y = R/2 * math.log((1 + math.sin(latitude))/(1 - math.sin(latitude))
         
         return (x, y)
+
+    ##############################################
+
+    def __str__(self):
+
+        return "{}, {}".format(self.longitude, self.latitude)
 
 ####################################################################################################
 #
