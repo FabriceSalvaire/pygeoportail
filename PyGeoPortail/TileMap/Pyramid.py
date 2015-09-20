@@ -26,6 +26,10 @@ import math
 
 from PyGeoPortail.Math.Functions import rint
 from PyGeoPortail.Math.Interval import IntervalInt2D
+from .Projection import GeoCoordinate
+
+_mercator_half_perimeter = math.pi * GeoCoordinate.equatorial_radius
+_mercator_perimeter = 2 * _mercator_half_perimeter
 
 ####################################################################################################
 
@@ -33,14 +37,16 @@ class Pyramid(object):
 
     __area__ = None # longitude, latitude
     __projection__ = 'epsg:3857'
-    __offset__ = None
-    __root_resolution__ = None
+    __offset__ = (-_mercator_half_perimeter, _mercator_half_perimeter) # m
     __number_of_levels__ = None
     __tile_size__ = 256 # px
 
     ##############################################
 
     def __init__(self):
+
+        # root_resolution = 156543.033928041 m / px
+        self._root_resolution = _mercator_perimeter / self.__tile_size__
 
         self._levels = [PyramidLevel(self, level) for level in range(self.__number_of_levels__)]
 
@@ -78,7 +84,7 @@ class Pyramid(object):
 
     @property
     def root_resolution(self):
-        return self.__root_resolution__
+        return self._root_resolution
 
     ##############################################
 
@@ -90,7 +96,7 @@ class Pyramid(object):
 
     def level_resolution(self, level):
 
-        return self.__root_resolution__ / 2**level
+        return self._root_resolution / 2**level
 
     ##############################################
 
@@ -102,7 +108,7 @@ class Pyramid(object):
 
     def closest_level(self, resolution):
 
-        return rint(math.log(self.__root_resolution__ / resolution) / math.log(2))
+        return rint(math.log(self._root_resolution / resolution) / math.log(2))
 
     ##############################################
 
@@ -113,7 +119,17 @@ class Pyramid(object):
         xm, ym = geo_coordinate.mercator
         x = xm - x0
         y = y0 - ym
+        
+        return (x, y)
 
+    ##############################################
+
+    def coordinate_to_projection_normalised(self, geo_coordinate):
+
+        x = float(geo_coordinate.longitude) / 360 + .5
+        y = .5*(math.log(math.tan(math.radians(float(geo_coordinate.latitude))/2 + math.pi/4)) / math.pi - 1)
+        # (x, y) * 2**level = (col, row))
+        
         return (x, y)
 
 ####################################################################################################
@@ -177,7 +193,9 @@ class PyramidLevel(object):
 
     def coordinate_to_projection(self, geo_coordinate):
 
-        return self._pyramid.coordinate_to_projection(geo_coordinate)
+        x, y = self._pyramid.coordinate_to_projection(geo_coordinate)
+        
+        return (x, y)
 
     ##############################################
 

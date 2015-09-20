@@ -48,9 +48,6 @@ _module_logger = logging.getLogger(__name__)
 class GeoPortailPyramid(Pyramid):
 
     __area__ = None # longitude, latitude
-    __projection__ = 'epsg:3857'
-    __offset__ = (-20037508, 20037508)
-    __root_resolution__ = 156543.033928041
     __number_of_levels__ = 22
     __tile_size__ = 256 # px
 
@@ -214,6 +211,19 @@ class GeoPortailWebService(object):
 
 ####################################################################################################
 
+class GeoPortailWTMSLicence(object):
+
+    ##############################################
+
+    def __init__(self, user, password, api_key, offline_cache_limit=1000):
+
+        self.user = user
+        self.password = password
+        self.api_key = api_key
+        self.offline_cache_limit = offline_cache_limit
+
+####################################################################################################
+
 class GeoPortailWTMS(object):
 
     _logger = _module_logger.getChild('GeoPortailWTMS')
@@ -222,11 +232,9 @@ class GeoPortailWTMS(object):
 
     ##############################################
 
-    def __init__(self, user, password, api_key):
+    def __init__(self, licence):
 
-        self._user = user
-        self._password = password
-        self._api_key = api_key
+        self._licence = licence
 
     ##############################################
 
@@ -253,9 +261,9 @@ class GeoPortailWTMS(object):
             # ConnectTimeoutError()
             # ReadTimeout()
             image_format = 'image/jpeg'
-            url = self.__url_template__.format(self._api_key, layer, image_format, level, row, column)
+            url = self.__url_template__.format(self._licence.api_key, layer, image_format, level, row, column)
             self._logger.info('GET ' + url)
-            request = yield from async_requests.get(url, auth=(self._user, self._password))
+            request = yield from async_requests.get(url, auth=(self._licence.user, self._licence.password))
             request.raise_for_status()
             content = yield from request.content
             self._logger.info('Completed GET ' + url)

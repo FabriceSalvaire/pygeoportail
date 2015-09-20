@@ -83,15 +83,17 @@ class ViewerApplication(GuiApplicationBase):
         
         from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
                                                      GeoPortailWTMS,
+                                                     GeoPortailWTMSLicence,
                                                      GeoPortailMapProvider,
                                                      GeoPortailOthorPhotoProvider)
         from PyGeoPortail.TileMap.LruCache import LruCache
         from PyGeoPortail.TileMap.Projection import GeoAngle, GeoCoordinate
         from PyGeoPortail.TileMap.TileCache import CachedPyramid
         
-        self._geoportail_wtms = GeoPortailWTMS(user='fabrice.salvaire@orange.fr',
-                                               password='fA77Sal(!',
-                                               api_key='qd58byg78dg3nloou4ksa0pz')
+        geoportail_licence = GeoPortailWTMSLicence(user='fabrice.salvaire@orange.fr',
+                                                   password='fA77Sal(!',
+                                                   api_key='algzhye2iogn8fvb0nkgf0zx')
+        self._geoportail_wtms = GeoPortailWTMS(geoportail_licence)
         
         self._geoportail_map_provider = GeoPortailMapProvider(self._geoportail_wtms)
         self._lru_cache = LruCache(constraint=1024**3)
@@ -116,16 +118,16 @@ class ViewerApplication(GuiApplicationBase):
         x, y = pyramid_level.coordinate_to_projection(location)
         glwidget.zoom_at_with_scale(x, y, zoom_factor=1/pyramid_level.resolution)
 
-        from PyGeoPortail.GraphicEngine.Path import Path
-        import numpy as np
-        s = 256
-        points = np.array([(x + i*215, y + j*256) for i, j in
-                           ((0, 0), (1, 1), (1, 2), (3, 4))])
-        colour = QtGui.QColor(Qt.blue)
-        colour = (colour.red(), colour.green(), colour.blue())
-        path = Path(colour, 10, points)
-        self._path_painter.add_item(path)
-        glwidget.update()
+        # from PyGeoPortail.GraphicEngine.Path import Path
+        # import numpy as np
+        # s = 256
+        # points = np.array([(x + i*215, y + j*256) for i, j in
+        #                    ((0, 0), (1, 1), (1, 2), (3, 4))])
+        # colour = QtGui.QColor(Qt.blue)
+        # colour = (colour.red(), colour.green(), colour.blue())
+        # path = Path(colour, 10, points)
+        # self._path_painter.add_item(path)
+        # glwidget.update()
 
 ####################################################################################################
 #
