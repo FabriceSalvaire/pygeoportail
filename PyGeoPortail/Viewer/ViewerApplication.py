@@ -89,10 +89,9 @@ class ViewerApplication(GuiApplicationBase):
         from PyGeoPortail.TileMap.LruCache import LruCache
         from PyGeoPortail.TileMap.Projection import GeoAngle, GeoCoordinate
         from PyGeoPortail.TileMap.TileCache import CachedPyramid
-        
-        geoportail_licence = GeoPortailWTMSLicence(user='fabrice.salvaire@orange.fr',
-                                                   password='fA77Sal(!',
-                                                   api_key='algzhye2iogn8fvb0nkgf0zx')
+
+        from PyGeoPortail.Config import Config
+        geoportail_licence = GeoPortailWTMSLicence.load_from_json(Config.License.geoportail)
         self._geoportail_wtms = GeoPortailWTMS(geoportail_licence)
         
         self._geoportail_map_provider = GeoPortailMapProvider(self._geoportail_wtms)

@@ -33,8 +33,10 @@ import asyncio
 
 ####################################################################################################
 
+from PyGeoPortail.Config import Config
 from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
                                              GeoPortailWTMS,
+                                             GeoPortailWTMSLicence,
                                              GeoPortailMapProvider,
                                              GeoPortailOthorPhotoProvider)
 from PyGeoPortail.TileMap.LruCache import LruCache
@@ -43,9 +45,8 @@ from PyGeoPortail.TileMap.TileCache import CachedPyramid
 
 ####################################################################################################
 
-geoportail_wtms = GeoPortailWTMS(user='fabrice.salvaire@orange.fr',
-                                 password='fA77Sal(!',
-                                 api_key='qd58byg78dg3nloou4ksa0pz')
+geoportail_licence = GeoPortailWTMSLicence.load_from_json(Config.License.geoportail)
+geoportail_wtms = GeoPortailWTMS(geoportail_licence, timeout=120)
 
 geoportail_pyramid = GeoPortailPyramid()
 

@@ -33,12 +33,12 @@ import asyncio
 
 ####################################################################################################
 
-from PyGeoPortail.TileMap.GeoPortail import (GeoPortailWebService,
-                                             GeoPortailPyramid,
+from PyGeoPortail.Config import Config
+from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
                                              GeoPortailWTMS,
+                                             GeoPortailWTMSLicence,
                                              GeoPortailMapProvider,
                                              GeoPortailOthorPhotoProvider)
-
 from PyGeoPortail.TileMap.Projection import GeoAngle, GeoCoordinate
 
 ####################################################################################################
@@ -51,44 +51,42 @@ latitude = GeoAngle(44, 41, 0)
 location = GeoCoordinate(longitude, latitude)
 row, column = geoportail_pyramid[level].coordinate_to_mosaic(location)
 
-user = 'fabrice.salvaire@orange.fr'
-password = 'fA77Sal(!'
-api_key = 'qd58byg78dg3nloou4ksa0pz'
-geoportail_web_service = GeoPortailWebService(user, password, api_key, timeout=120)
+geoportail_licence = GeoPortailWTMSLicence.load_from_json(Config.License.geoportail)
+geoportail_wtms = GeoPortailWTMS(geoportail_licence, timeout=120)
 
-print(geoportail_web_service.make_url('geoportail', 'wmts',
-                                      service='WMTS',
-                                      version='1.0.0',
-                                      request='GetTile',
-                                      layer='GEOGRAPHICALGRIDSYSTEMS.MAPS',
-                                      style='normal',
-                                      format='image/jpeg',
-                                      tilematrixset='PM',
-                                      tilematrix=level,
-                                      tilerow=row,
-                                      tilecol=column,
+print(geoportail_wtms.make_url('geoportail', 'wmts',
+                               service='WMTS',
+                               version='1.0.0',
+                               request='GetTile',
+                               layer='GEOGRAPHICALGRIDSYSTEMS.MAPS',
+                               style='normal',
+                               format='image/jpeg',
+                               tilematrixset='PM',
+                               tilematrix=level,
+                               tilerow=row,
+                               tilecol=column,
 ))
 
 loop = asyncio.get_event_loop()
 
-# print(loop.run_until_complete(geoportail_web_service.async_get('geoportail', 'wmts',
-#                                                                service='WMTS',
-#                                                                version='1.0.0',
-#                                                                request='GetTile',
-#                                                                layer='GEOGRAPHICALGRIDSYSTEMS.MAPS',
-#                                                                style='normal',
-#                                                                format='image/jpeg',
-#                                                                tilematrixset='PM',
-#                                                                tilematrix=level,
-#                                                                tilerow=row,
-#                                                                tilecol=column,
+# print(loop.run_until_complete(geoportail_wtms.async_get('geoportail', 'wmts',
+#                                                          service='WMTS',
+#                                                          version='1.0.0',
+#                                                          request='GetTile',
+#                                                          layer='GEOGRAPHICALGRIDSYSTEMS.MAPS',
+#                                                          style='normal',
+#                                                          format='image/jpeg',
+#                                                          tilematrixset='PM',
+#                                                          tilematrix=level,
+#                                                          tilerow=row,
+#                                                          tilecol=column,
 # )))
 
 # Could take a while ...
-# print(geoportail_web_service.autoconf(api_key))
+# print(geoportail_wtms.autoconf(api_key))
 
 # timeout ???
-# tasks = [asyncio.async(geoportail_web_service.async_autoconf(api_key))]
+# tasks = [asyncio.async(geoportail_wtms.async_autoconf(api_key))]
 # response = loop.run_until_complete(asyncio.wait(tasks, timeout=120))
 # print(response)
 
@@ -263,7 +261,7 @@ xml_query = '''<?xml version="1.0" encoding="UTF-8"?>
 ###                           <gml:pos>48.8033 2.3241</gml:pos>
 ###                           <gml:pos>48.8033 2.3242</gml:pos>
 ###                           <gml:pos>48.8032 2.3242</gml:pos>
-###                           <gml:pos>48.8032 2.3241</gml:pos>         
+###                           <gml:pos>48.8032 2.3241</gml:pos>
 ###                       </gml:LinearRing>
 ###                   </gml:exterior>
 ###                </gml:Polygon>
@@ -273,24 +271,24 @@ xml_query = '''<?xml version="1.0" encoding="UTF-8"?>
 ### </XLS>
 ###
 
-print(geoportail_web_service.get('geoportail', 'ols', xls=xml_query)) # , output='json'
+print(geoportail_wtms.get('geoportail', 'ols', xls=xml_query)) # , output='json'
 
-print(geoportail_web_service.get('ols', 'apis', 'completion',
-                                 text='20 avenue pasteur saint m',
-                                 type='StreetAddress',
-                                 maximumResponses=5))
+print(geoportail_wtms.get('ols', 'apis', 'completion',
+                          text='20 avenue pasteur saint m',
+                          type='StreetAddress',
+                          maximumResponses=5))
 
-print(geoportail_web_service.get('ols', 'apis', 'completion',
-                                 terr='METROPOLE',
-                                 text='mont pelvo',
-                                 type='PositionOfInterest',
-                                 maximumResponses=5))
+print(geoportail_wtms.get('ols', 'apis', 'completion',
+                          terr='METROPOLE',
+                          text='mont pelvo',
+                          type='PositionOfInterest',
+                          maximumResponses=5))
 
-print(geoportail_web_service.get('ols', 'apis', 'completion',
-                                 terr='METROPOLE',
-                                 text='refuge des ban',
-                                 type='PositionOfInterest',
-                                 maximumResponses=5))
+print(geoportail_wtms.get('ols', 'apis', 'completion',
+                          terr='METROPOLE',
+                          text='refuge des ban',
+                          type='PositionOfInterest',
+                          maximumResponses=5))
 
 ####################################################################################################
 #

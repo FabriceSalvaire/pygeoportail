@@ -23,6 +23,7 @@
 from io import BytesIO
 from urllib.parse import urlencode, quote
 import asyncio
+import json
 import logging
 import os
 
@@ -127,91 +128,16 @@ class GeoPortailTile(object):
 
 ####################################################################################################
 
-class GeoPortailWebService(object):
-
-    _logger = _module_logger.getChild('GeoPortailWebService')
-
-    __protocol__ = 'https'
-    __domain__ = 'wxs.ign.fr'
-
-    ##############################################
-
-    def __init__(self, user, password, api_key, timeout=30):
-
-        self._user = user
-        self._password = password
-        self._api_key = api_key
-        self._timeout = timeout
-
-    ##############################################
-
-    @property
-    def user(self):
-        return self._user
-
-    @property
-    def password(self):
-        return self._password
-
-    @property
-    def api_key(self):
-        return self._api_key
-
-    @property
-    def timeout(self):
-        return self._timeout
-
-    ##############################################
-
-    def make_url(self, *args, **kwargs):
-
-        # '&'.join(['{}={}'.format(key.upper(), quote(value))
-        #           for key, value in kwargs.items()])
-        
-        return '{}://{}/{}/{}?{}'.format(self.__protocol__, self.__domain__, self._api_key,
-                                         '/'.join(args), urlencode(kwargs))
-
-    ##############################################
-
-    def get(self, *args, **kwargs):
-
-        url = self.make_url(*args, **kwargs)
-        self._logger.info('GET ' + url)
-        request = requests.get(url, auth=(self._user, self._password), timeout=self._timeout)
-        content = request.text
-        
-        return content
-
-    ##############################################
-
-    @asyncio.coroutine
-    def async_get(self, *args, **kwargs):
-
-        url = self.make_url(*args, **kwargs)
-        self._logger.info('GET ' + url)
-        request = yield from async_requests.get(url, auth=(self._user, self._password), timeout=self._timeout)
-        request.raise_for_status()
-        content = yield from request.content
-        
-        return content
-
-    ##############################################
-
-    def autoconf(self, *keys):
-
-        return self.get('autoconf', keys=','.join(keys))
-
-    @asyncio.coroutine
-    ##############################################
-
-    def async_autoconf(self, *keys):
-
-        # Timeout !
-        return self.async_get('autoconf', keys=','.join(keys))
-
-####################################################################################################
-
 class GeoPortailWTMSLicence(object):
+
+    ##############################################
+
+    @staticmethod
+    def load_from_json(json_path, name='default'):
+
+        with open(json_path, 'r') as f:
+            kwargs = json.load(f)
+        return GeoPortailWTMSLicence(**kwargs[name])
 
     ##############################################
 
@@ -228,13 +154,67 @@ class GeoPortailWTMS(object):
 
     _logger = _module_logger.getChild('GeoPortailWTMS')
 
-    __url_template__ = 'https://wxs.ign.fr/{}/geoportail/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER={}&STYLE=normal&FORMAT={}&TILEMATRIXSET=PM&TILEMATRIX={}&TILEROW={}&TILECOL={}&'
+    __protocol__ = 'https'
+    __server__ = 'wxs.ign.fr'
 
     ##############################################
 
-    def __init__(self, licence):
+    def __init__(self, licence, timeout=30):
 
         self._licence = licence
+        self._timeout = timeout
+
+    ##############################################
+
+    def make_url(self, *args, **kwargs):
+
+        # urlencode: '&'.join()
+        #
+        # '&'.join(['{}={}'.format(key.upper(), quote(value))
+        #           for key, value in kwargs.items()])
+
+        return '{}://{}/{}/{}?{}'.format(self.__protocol__, self.__server__,
+                                         self._licence.api_key,
+                                         '/'.join(args),
+                                         urlencode(kwargs))
+
+    ##############################################
+
+    def get(self, *args, **kwargs):
+
+        url = self.make_url(*args, **kwargs)
+        self._logger.info('GET ' + url)
+        request = requests.get(url, auth=(self._licence.user, self._licence.password), timeout=self._timeout)
+        content = request.text
+        
+        return content, url
+
+    ##############################################
+
+    @asyncio.coroutine
+    def async_get(self, *args, **kwargs):
+
+        url = self.make_url(*args, **kwargs)
+        self._logger.info('GET ' + url)
+        request = yield from async_requests.get(url, auth=(self._licence.user, self._licence.password), timeout=self._timeout)
+        request.raise_for_status()
+        content = yield from request.content
+        
+        return content, url
+
+    ##############################################
+
+    def autoconf(self, *keys):
+
+        return self.get('autoconf', keys=','.join(keys))
+
+    @asyncio.coroutine
+    ##############################################
+
+    def async_autoconf(self, *keys):
+
+        # Timeout !
+        return self.async_get('autoconf', keys=','.join(keys))
 
     ##############################################
 
@@ -260,12 +240,18 @@ class GeoPortailWTMS(object):
             # Fixme: offline
             # ConnectTimeoutError()
             # ReadTimeout()
-            image_format = 'image/jpeg'
-            url = self.__url_template__.format(self._licence.api_key, layer, image_format, level, row, column)
-            self._logger.info('GET ' + url)
-            request = yield from async_requests.get(url, auth=(self._licence.user, self._licence.password))
-            request.raise_for_status()
-            content = yield from request.content
+            content, url = yield from self.async_get('geoportail', 'wmts',
+                                                     SERVICE='WMTS',
+                                                     VERSION='1.0.0',
+                                                     REQUEST='GetTile',
+                                                     LAYER=layer,
+                                                     STYLE='normal',
+                                                     FORMAT='image/jpeg',
+                                                     TILEMATRIXSET='PM',
+                                                     TILEMATRIX=level,
+                                                     TILEROW=row,
+                                                     TILECOL=column,
+            )
             self._logger.info('Completed GET ' + url)
             tile.image = self.to_image(content)
         
