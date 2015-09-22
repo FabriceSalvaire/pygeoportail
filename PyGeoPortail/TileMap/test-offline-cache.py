@@ -28,6 +28,8 @@ offline_cache.insert_region(region, tile_provider)
 
 offline_cache.delete_region(1)
 
+# test on-line cache
+
 # for column in range(5):
 #     tile = Tile(map_level, row=1, column=column)
 #     offline_cache.insert_tile(tile, offline=1)

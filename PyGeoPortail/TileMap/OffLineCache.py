@@ -20,6 +20,7 @@
 
 ####################################################################################################
 
+import logging
 import os
 
 import numpy as np
@@ -29,6 +30,10 @@ from PyQt5 import QtCore, QtSql
 ####################################################################################################
 
 from PyGeoPortail.Math.Interval import IntervalInt
+
+####################################################################################################
+
+_module_logger = logging.getLogger(__name__)
 
 ####################################################################################################
 
@@ -49,9 +54,20 @@ class MapLevel(object):
 
         return '{}/{}/{}/{}'.format(self.provider_id, self.map_id, self.version, self.level)
 
+    ##############################################
+
+    def __eq__(self, other):
+
+        return (
+            self.provider_id == other.provider_id and
+            self.map_id == other.map_id and
+            self.version == other.version and
+            self.level == other.level
+        )
+
 ####################################################################################################
 
-class Tile(object):
+class TileIndex(object):
 
     ##############################################
 
@@ -72,6 +88,16 @@ class Tile(object):
                               row=self.row,
                               column=self.column)
 
+    ##############################################
+
+    def __eq__(self, other):
+
+        return (
+            self.map_level == other.map_level and
+            self.row == other.row and
+            self.column == other.column
+        )
+
 ####################################################################################################
 
 class Run(object):
@@ -82,6 +108,21 @@ class Run(object):
 
         self.row = row
         self.column = column
+
+    ##############################################
+
+    def __str__(self):
+
+        return '({}, {})'.format(self.row, self.column)
+
+    ##############################################
+
+    def __eq__(self, other):
+
+        return (
+            self.row == other.row and
+            self.column == other.column
+        )
 
     ##############################################
 
@@ -104,11 +145,29 @@ class Region(object):
 
     ##############################################
 
+    @property
+    def number_of_tiles(self):
+
+        return sum([run.column.length() for run in self.runs])
+
+   ##############################################
+
+    def __eq__(self, other):
+
+        return (
+            self.name == other.name and
+            self.map_level == other.map_level
+            # Fixme:
+            # and self.runs == other.runs
+        )
+
+    ##############################################
+
     def __iter__(self):
 
         for run in self.runs:
             for row, column in run:
-                yield Tile(self.map_level, row, column)
+                yield TileIndex(self.map_level, row, column)
 
 ####################################################################################################
 
@@ -118,6 +177,8 @@ class SqlError(Exception):
 ####################################################################################################
 
 class OffLineCache(object):
+
+    _logger = _module_logger.getChild('OffLineCache')
 
     ##############################################
 
@@ -134,11 +195,12 @@ class OffLineCache(object):
         if not self._database.open():
             raise NameError(self._database.lastError().text())
         
+        self._map_level_to_id_cache = {}
+        self._id_to_map_level_cache = {}
         if create:
             self._create_tables()
-
-        self._map_level_id_cache = {}
-        self._map_level_cache = {}
+        else:
+            self.load_map_levels()
 
     ##############################################
 
@@ -154,7 +216,7 @@ class OffLineCache(object):
 
     ##############################################
 
-    def _commit(self):
+    def commit(self):
 
         return self._database.commit()
 
@@ -221,12 +283,11 @@ class OffLineCache(object):
         
         query = self._query()
         for sql_query in schemas:
-            print(sql_query)
+            self._logger.debug(sql_query)
             if not query.exec_(sql_query):
                 raise NameError(query.lastError().text())
-        self._commit()
         self._init_version()
-        self._commit()
+        self.commit()
 
     ##############################################
 
@@ -268,14 +329,14 @@ class OffLineCache(object):
         query = self._query()
         fields = kwargs.keys()
         sql_query = 'INSERT INTO ' + table + ' (' + ', '.join(fields) + ') VALUES (' + ', '.join(['?']*len(fields)) + ')'
-        print(sql_query)
+        self._logger.debug(sql_query + '\n' + str(kwargs))
         query.prepare(sql_query)
         for value in kwargs.values():
             query.addBindValue(value)
         if not query.exec_():
             raise NameError(query.lastError().text())
         if commit:
-            self._commit()
+            self.commit()
         return query
 
     ##############################################
@@ -284,9 +345,10 @@ class OffLineCache(object):
 
         query = self._query()
         sql_query = 'SELECT ' + ', '.join(args) + ' FROM ' + table
+        # Fixme: duplicated code
         if where:
             sql_query += ' WHERE ' + where
-        print(sql_query)
+        self._logger.debug(sql_query)
         if not query.exec_(sql_query):
             raise NameError(query.lastError().text())
         return query
@@ -318,9 +380,10 @@ class OffLineCache(object):
         sql_query = 'DELETE FROM ' + table
         if where:
             sql_query += ' WHERE ' + where
-        print(sql_query)
+        self._logger.debug(sql_query)
         if not query.exec_(sql_query):
             raise NameError(query.lastError().text())
+        # commit
         return query
 
     ##############################################
@@ -331,9 +394,10 @@ class OffLineCache(object):
         sql_query = 'UPDATE ' + table + ' SET ' + self._comma_join(kwargs)
         if where:
             sql_query += ' WHERE ' + where
-        print(sql_query)
+        self._logger.debug(sql_query)
         if not query.exec_(sql_query):
             raise NameError(query.lastError().text())
+        # commit
         return query
 
     ##############################################
@@ -354,9 +418,14 @@ class OffLineCache(object):
 
     def _get_map_level_id(self, map_level):
 
+        # 1. look in cache_schema
+        # 2. look in db
+        # 3. insert a new row
+        # return id
+        
         map_level_hash = str(map_level)
-        if map_level_hash in self._map_level_id_cache:
-            return self._map_level_id_cache[map_level_hash]
+        if map_level_hash in self._map_level_to_id_cache:
+            return self._map_level_to_id_cache[map_level_hash]
         else:
             where = self._map_level_where_clause(map_level)
             record = self._select_one('map_level', where, 'map_level_id')
@@ -371,13 +440,16 @@ class OffLineCache(object):
                                      commit=True
                 )
                 map_level_id = query.lastInsertId()
-                self._map_level_id_cache[map_level_hash] = map_level_id
+                self._map_level_to_id_cache[map_level_hash] = map_level_id
+                self._id_to_map_level_cache[map_level_id] = map_level
                 return map_level_id
 
     ##############################################
 
     def load_map_levels(self):
 
+        self._map_level_to_id_cache.clear()
+        
         args = ('map_level_id', 'provider_id', 'map_id', 'version', 'level')
         query = self._select('map_level', '', *args)
         while query.next():
@@ -386,7 +458,24 @@ class OffLineCache(object):
             map_level_id = d['map_level_id']
             provider_id, map_id, version, level = d['provider_id'], d['map_id'], d['version'], d['level']
             map_level = MapLevel(provider_id, map_id, version, level)
-            self._map_level_cache[map_level_id] = map_level
+            self._map_level_to_id_cache[map_level_id] = map_level
+            self._id_to_map_level_cache[map_level_id] = map_level
+
+    ##############################################
+
+    def map_levels_for_provider(self, provider_id):
+
+        map_levels = {}
+        args = ('map_level_id', 'map_id', 'version', 'level')
+        query = self._select('map_level', 'provider_id={}'.format(provider_id), *args)
+        while query.next():
+            record = query.record()
+            d = {key:query.value(record.indexOf(key)) for key in args}
+            map_level_id = d['map_level_id']
+            map_id, version, level = d['map_id'], d['version'], d['level']
+            map_level = MapLevel(provider_id, map_id, version, level)
+            map_levels[map_level_id] = map_level
+        return map_levels
 
     ##############################################
 
@@ -449,6 +538,7 @@ class OffLineCache(object):
 
         where = self._tile_where_clause(tile)
         record = self._select_one('tile', where, 'data')
+        return record['data']
 
     ##############################################
 
@@ -464,10 +554,23 @@ class OffLineCache(object):
         where = self._tile_where_clause(tile)
         record = self._select_one('tile', where, 'offline_count')
         offline_count = record['offline_count']
+        # Fixme: 0
         if  offline_count == 1:
             self._delete('tile', where)
         else:
             self.update_tile_offline_count(tile, offline_count-1)
+
+    ##############################################
+
+    def tile_count_for_provider_id(self, provider_id):
+
+        map_levels = self.map_levels_for_provider(provider_id)
+
+        tile_count = 0
+        for map_level_id in map_levels.keys():
+            record = self._select_one('tile', 'map_level_id="{}"'.format(map_level_id), 'count()')
+            tile_count += record['count()']
+        return tile_count
 
     ##############################################
 
@@ -499,14 +602,43 @@ class OffLineCache(object):
 
     ##############################################
 
-    def get_region(self):
+    def _get_region_id(self, name):
 
-        pass
+        record = self._select_one('region', 'name="{}"'.format(name), 'region_id')
+        if record:
+            return record['region_id']
+        else:
+            return None
 
     ##############################################
 
-    def delete_region(self, region_id):
+    def get_region(self, name):
 
+        region_id = self._get_region_id(name)
+        if region_id is not None:
+            runs = []
+            args = ('map_level_id', 'row', 'column_inf', 'column_sup')
+            query = self._select('region_run', 'region_id={}'.format(region_id), *args)
+            while query.next():
+                record = query.record()
+                # Fixme: to func
+                d = {key:query.value(record.indexOf(key)) for key in args}
+                map_level_id, row, column_inf, column_sup = d['map_level_id'], d['row'], d['column_inf'], d['column_sup']
+                runs.append(Run(row, IntervalInt(column_inf, column_sup)))
+                # Fixme:
+                map_level = self._id_to_map_level_cache[map_level_id]
+            return Region(name, map_level, runs)
+        else:
+            return None
+
+    ##############################################
+
+    def delete_region(self, name):
+
+        region_id = self._get_region_id(name)
+        if region_id is None:
+            return
+        
         args = ('map_level_id', 'row', 'column_inf', 'column_sup')
         query = self._select('region_run', 'region_id={}'.format(region_id), *args)
         while query.next():
@@ -516,7 +648,7 @@ class OffLineCache(object):
             # run = Run(row, IntervalInt(column_inf, column_sup))
             for column in range(column_inf, column_sup +1):
                 map_level = None # Fixme: ???
-                tile = Tile(map_level, row, column)
+                tile = TileIndex(map_level, row, column)
                 tile.map_level_id = map_level_id
                 # if self.has_tile(tile) == 1: # called twice !
                 self.delete_tile(tile)
