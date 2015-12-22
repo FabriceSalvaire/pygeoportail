@@ -26,6 +26,8 @@ from PyQt5.QtCore import QXmlStreamReader
 
 class XmlParser(object):
 
+    """Parse a well formed XML document."""
+
     ##############################################
 
     def __init__(self):
@@ -37,7 +39,10 @@ class XmlParser(object):
     def _raise(self):
 
         xml_parser = self._xml_parser
-        raise NameError('@{} {} {}'.format(xml_parser.lineNumber(), xml_parser.tokenString(), xml_parser.name()))
+        template = 'Parse error @ line {} column {} character offset {}'
+        raise NameError(template.format(xml_parser.lineNumber(),
+                                        xml_parser.columnNumber(),
+                                        xml_parser.characterOffset()))
 
     ##############################################
 
@@ -126,15 +131,18 @@ class XmlParser(object):
     def _read_text(self, name):
 
         # start must be read
-        xml_parser = self._xml_parser
-        if self._xml_parser.readNext() == QXmlStreamReader.Characters:
-            text = xml_parser.text()
-        else:
-            self._raise()
-        if self._read_match_end_element(name):
-            return text
-        else:
-            self._raise()
+
+        # xml_parser = self._xml_parser
+        # if self._xml_parser.readNext() == QXmlStreamReader.Characters:
+        #     text = xml_parser.text()
+        # else:
+        #     self._raise()
+        # if self._read_match_end_element(name):
+        #     return text
+        # else:
+        #     self._raise()
+
+        return self._xml_parser.readElementText()
 
     ##############################################
 
@@ -166,7 +174,12 @@ class XmlParser(object):
 
         self._xml_parser = QXmlStreamReader(xml_document)
         # xml_parser.setDevice(xml_document)
-        return self.parser_loop()
+        data = self.parser_loop()
+        if self._xml_parser.hasError():
+            raise NameError(self._xml_parser.errorString())
+        # self._xml_parser.clear()
+        self._xml_parser = None
+        return data
 
     ##############################################
 

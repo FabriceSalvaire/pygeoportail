@@ -83,8 +83,8 @@ class AutoConf(JsonAble):
 
     def __init__(self):
 
-        self.general = General()
-        self.layer_list = []
+        self.general = None
+        self.layer_list = None
 
 ####################################################################################################
 
@@ -97,7 +97,7 @@ class General(JsonAble):
         self.window = None
         self.bounding_box = None
         self.title = None
-        self.extension = Extension()
+        self.extension = None
 
 ####################################################################################################
 
@@ -109,10 +109,10 @@ class Extension(JsonAble):
 
         self.theme = None
         self.defaultGMLGFIStyleUrl = None
-        self.territories = []
-        self.tile_matrix_sets = []
+        self.territories = None
+        self.tile_matrix_sets = None
         self.resolutions = None
-        self.services = []
+        self.services = None
 
 ####################################################################################################
 
@@ -126,13 +126,13 @@ class Territory(JsonAble):
         self.id = None
         self.name = None
         self.default_crs = None
-        self.additional_crs = []
+        self.additional_crs = None
         self.bounding_box = None
         self.min_scale_denominator = None
         self.max_scale_denominator = None
         self.resolution = None
         self.center = None
-        self.default_layers = []
+        self.default_layers = None
 
 ####################################################################################################
 
@@ -144,7 +144,7 @@ class TileMatrixSet(JsonAble):
 
         self.identifier = None
         self.supported_crs = None
-        self.tile_matrices = []
+        self.tile_matrices = None
 
 ####################################################################################################
 
@@ -247,7 +247,7 @@ class Originator(JsonAble):
         self.name = None
         self.attribution = None
         self.url = None
-        self.constraints = []
+        self.constraints = None
 
 ####################################################################################################
 
@@ -276,9 +276,9 @@ class Layer(JsonAble):
         self.abstract = None
         self.min_scale_denominator = None
         self.max_scale_denominator = None
-        self.format_list = []
-        self.style_list = []
-        self.dimension_list = []
+        self.format_list = None
+        self.style_list = None
+        self.dimension_list = None
         self.extension = None
         self.srs = None
 
@@ -291,7 +291,7 @@ class TileMatrixSetLink(JsonAble):
     def __init__(self):
 
         self.name = None
-        self.limits = []
+        self.limits = None
 
 ####################################################################################################
 
@@ -316,17 +316,42 @@ class ExtensionLayer(JsonAble):
     def __init__(self):
 
         self.id = None
-        self.constraints = []
-        self.thematics = []
-        self.inspire_thematics = []
+        self.constraints = None
+        self.thematics = None
+        self.inspire_thematics = None
         self.bounding_box = None
-        self.additional_crs = []
-        self.originators = []
-        self.legends = []
+        self.additional_crs = None
+        self.originators = None
+        self.legends = None
         self.quicklook = None
         self.tile_matrix_set_link = None
         self.metadata_url = None
-        self.keys = []
+        self.keys = None
+
+####################################################################################################
+
+class Window(JsonAble):
+
+    ##############################################
+
+    def __init__(self, width, height):
+
+        self.width = width
+        self.height = height
+
+####################################################################################################
+
+class BoundingBox(JsonAble):
+
+    ##############################################
+
+    def __init__(self, srs, x_min, y_min, x_max, y_max):
+
+        self.srs = srs
+        self.x_min = x_min
+        self.y_min = y_min
+        self.x_max = x_max
+        self.y_max = y_max
 
 ####################################################################################################
 #

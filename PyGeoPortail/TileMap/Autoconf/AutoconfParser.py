@@ -25,6 +25,14 @@ from .Model import *
 
 ####################################################################################################
 
+def int_attr(attr, key):
+    return int(attr[key])
+
+def float_attr(attr, key):
+    return float(attr[key])
+
+####################################################################################################
+
 class AutoconfParser(XmlParser):
 
     ##############################################
@@ -55,13 +63,22 @@ class AutoconfParser(XmlParser):
             self._raise()
         if not self._read_match_start_element('ViewContext'):
             self._raise()
+        # while self._xml_parser.readNextStartElement():
+        #     name = self._xml_parser.name()
+        #     if name == 'General':
+        #         self._parse_General(autoconf.general)
+        #     elif name == 'LayerList':
+        #         self._parse_LayerList(autoconf.layer_list)
+        #     else:
+        #         self._xml_parser.skipCurrentElement()
+        #         self._raise()
         while not self._read_match_end_element('ViewContext'):
             if self._xml_parser.isStartElement():
                 name = self._xml_parser.name()
                 if name == 'General':
-                    self._parse_General(autoconf.general)
+                    autoconf.general = self._parse_General()
                 elif name == 'LayerList':
-                    self._parse_LayerList(autoconf.layer_list)
+                    autoconf.layer_list = self._parse_LayerList()
                 else:
                     self._raise()
             # else
@@ -71,70 +88,75 @@ class AutoconfParser(XmlParser):
         if self._xml_parser.readNext() != QXmlStreamReader.EndDocument:
             self._raise()
         
-        self._xml_parser = None
-        
         return autoconf
 
     ##############################################
 
-    def _parse_General(self, general):
+    def _parse_General(self):
 
         # <General>
         #   <Window height="300" width="500"/>
         #   <BoundingBox SRS="EPSG:4326" maxx="180.0" maxy="90.0" minx="-90.0" miny="-180.0"/>
         #   <Title>Service d'autoconfiguration des API</Title>
-        #   <Extension>
+        #   <Extension> ... </Extension>
         # </General>
 
         # dispatched
+        general = General()
         while not self._read_match_end_element('General'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
                 name = self._xml_parser.name()
                 if name == 'Window':
-                    self._parse_Window(general)
+                    general.window = self._parse_Window()
                 elif name == 'BoundingBox':
-                    self._parse_BoundingBox(general)
+                    general.bounding_box = self._parse_BoundingBox()
                 elif name == 'Title':
-                    self._parse_Title(general)
+                    general.title = self._parse_Title()
                 elif name == 'Extension':
-                    self._parse_Extension(general.extension)
+                    general.extension = self._parse_Extension()
                 else:
                     self._raise()
             # else
+        return general
 
     ##############################################
 
-    def _parse_Window(self, general):
+    def _parse_Window(self):
 
         # <Window height="300" width="500"/>
 
         # dispatched
         attr = self._attribute_to_dict('height', 'width')
-        general.window = {key:int(value) for key, value in attr.items()}
+        return Window(int_attr(attr, 'height'), int_attr(attr, 'height'))
 
     ##############################################
 
-    def _parse_BoundingBox(self, general):
+    def _parse_BoundingBox(self):
 
         # <BoundingBox SRS="EPSG:4326" maxx="180.0" maxy="90.0" minx="-90.0" miny="-180.0"/>
 
         # dispatched
-        general.bounding_box = self._attribute_to_dict('SRS', 'maxx', 'maxy', 'minx', 'miny')
+        attr = self._attribute_to_dict('SRS', 'maxx', 'maxy', 'minx', 'miny')
+        return BoundingBox(srs=attr['SRS'],
+                           x_min=float_attr(attr, 'minx'),
+                           y_min=float_attr(attr, 'miny'),
+                           x_max=float_attr(attr, 'maxx'),
+                           y_max=float_attr(attr, 'maxy'))
 
     ##############################################
 
-    def _parse_Title(self, general):
+    def _parse_Title(self):
 
         # <Title>Service d'autoconfiguration des API</Title>
 
         # dispatched
-        general.title = self._read_text('Title')
+        return self._read_text('Title')
 
     ##############################################
 
-    def _parse_Extension(self, extension):
+    def _parse_Extension(self):
 
         # <Extension>
         #   <gpp:General>
@@ -149,7 +171,7 @@ class AutoconfParser(XmlParser):
         # </Extension>
 
         # dispatched
-        # gpp:
+        extension = Extension()
         self._read_until_empty()
         if not self._match_start_element('General'):
             self._raise()
@@ -164,34 +186,38 @@ class AutoconfParser(XmlParser):
                 elif name == 'defaultGMLGFIStyleUrl':
                     extension.defaultGMLGFIStyleUrl = self._read_text('defaultGMLGFIStyleUrl')
                 elif name == 'Territories':
-                    self._parse_Territories(extension.territories)
+                    extension.territories = self._parse_Territories()
                 elif name == 'TileMatrixSets':
-                    self._parse_TileMatrixSets(extension.tile_matrix_sets)
+                    extension.tile_matrix_sets = self._parse_TileMatrixSets()
                 elif name == 'Resolutions':
                     extension.resolutions = self._parse_Resolutions()
                 elif name == 'Services':
-                    self._parse_Services(extension.services)
+                    extension.services = self._parse_Services()
                 else:
                     self._raise()
             # else
-
+        
         self._read_until_empty()
         if not self._match_end_element('Extension'):
             self._raise()
+        
+        return extension
 
     ##############################################
 
-    def _parse_Territories(self, territories):
+    def _parse_Territories(self):
 
         # <gpp:Territories>
 	#   <gpp:Territory default="1" id="FXX" name="FXX"> ... </gpp:Territory>
         # </gpp:Territories>
 
         # dispatched
+        territories = []
         while not self._read_match_end_element('Territories'):
             if self._match_empty():
                 continue
             territories.append(self._parse_Territory())
+        return territories
 
     ##############################################
 
@@ -218,6 +244,7 @@ class AutoconfParser(XmlParser):
         territory.default = attr['default']
         territory.id = attr['id']
         territory.name = attr['name']
+        territory.additional_crs = []
         
         while not self._read_match_end_element('Territory'):
             if self._match_empty():
@@ -239,7 +266,7 @@ class AutoconfParser(XmlParser):
                 elif name == 'Center':
                     territory.center = self._parse_Center()
                 elif name == 'DefaultLayers':
-                    self._parse_DefaultLayers(territory.default_layers)
+                    territory.default_layers = self._parse_DefaultLayers()
                 else:
                     self._raise()
             # else
@@ -268,12 +295,11 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
-        
         return x, y
 
     ##############################################
 
-    def _parse_DefaultLayers(self, default_layers):
+    def _parse_DefaultLayers(self):
 
 	#   <gpp:DefaultLayers>
 	#     <gpp:DefaultLayer layerId="ORTHOIMAGERY.ORTHOPHOTOS$GEOPORTAIL:OGC:WMTS"/>
@@ -281,6 +307,7 @@ class AutoconfParser(XmlParser):
         #     ...
 	#   </gpp:DefaultLayers>
 
+        default_layers = []
         while not self._read_match_end_element('DefaultLayers'):
             if self._match_empty():
                 continue
@@ -293,6 +320,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        return default_layers
 
     ##############################################
 
@@ -308,17 +336,19 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_TileMatrixSets(self, tile_matrix_sets):
+    def _parse_TileMatrixSets(self):
 
 	# <gpp:TileMatrixSets>
 	#   <wmts:TileMatrixSet> ... </wmts:TileMatrixSet>
         #   ...
         # </gpp:TileMatrixSets>
 
+        tile_matrix_sets = []
         while not self._read_match_end_element('TileMatrixSets'):
             if self._match_empty():
                 continue
             tile_matrix_sets.append(self._parse_TileMatrixSet())
+        return tile_matrix_sets
 
     ##############################################
 
@@ -334,6 +364,7 @@ class AutoconfParser(XmlParser):
         if not self._match_start_element('TileMatrixSet'):
             self._raise()
         tile_matrix_set = TileMatrixSet()
+        tile_matrix_set.tile_matrices = []
         while not self._read_match_end_element('TileMatrixSet'):
             if self._match_empty():
                 continue
@@ -397,17 +428,19 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_Services(self, services):
+    def _parse_Services(self):
 
 	# <gpp:Services>
 	#   <Server service="OGC:OPENLS;Geocode" title="Service de Geocodage" version="1.2"> ... </Server>
         #   ...
         # <gpp:Services>
 
+        services = []
         while not self._read_match_end_element('Services'):
             if self._match_empty():
                 continue
             services.append(self._parse_Server())
+        return services
 
     ##############################################
 
@@ -438,17 +471,19 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_LayerList(self, layer_list):
+    def _parse_LayerList(self):
 
         # <LayerList>
         #   <Layer hidden="1" queryable="1"> ... </Layer>
         #   ...
         # </LayerList>
 
+        layer_list = []
         while not self._read_match_end_element('LayerList'):
             if self._match_empty():
                 continue
             layer_list.append(self._parse_Layer())
+        return layer_list
 
     ##############################################
 
@@ -494,11 +529,11 @@ class AutoconfParser(XmlParser):
                 elif name == 'SRS':
                     layer.srs = self._read_text('SRS')
                 elif name == 'FormatList':
-                    self._parse_FormatList(layer.format_list)
+                    layer.format_list = self._parse_FormatList()
                 elif name == 'StyleList':
-                    self._parse_StyleList(layer.style_list)
+                    layer.style_list = self._parse_StyleList()
                 elif name == 'DimensionList':
-                    self._parse_DimensionList(layer.dimension_list)
+                    layer.dimension_list = self._parse_DimensionList()
                 elif name == 'Extension':
                     layer.extension = self._parse_Layer_Extension()
                 else:
@@ -508,17 +543,19 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_FormatList(self, format_list):
+    def _parse_FormatList(self):
 
         # <FormatList>
         #   <Format current="1">text/xml</Format>
         #   ...
         # </FormatList>
 
+        format_list = []
         while not self._read_match_end_element('FormatList'):
             if self._match_empty():
                 continue
             format_list.append(self._parse_Format())
+        return format_list
 
     ##############################################
 
@@ -534,17 +571,19 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_StyleList(self, style_list):
+    def _parse_StyleList(self):
 
         # <StyleList>
         #   <Style current="1"> ... </Style>
         #   ...
         # <StyleList>
 
+        style_list = []
         while not self._read_match_end_element('StyleList'):
             if self._match_empty():
                 continue
             style_list.append(self._parse_Style())
+        return style_list
 
     ##############################################
 
@@ -576,12 +615,13 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_DimensionList(self, dimension_list):
+    def _parse_DimensionList(self):
 
-      # <DimensionList>
-      #   <Dimension name="GeometricType" unitSymbol="" units="" userValue="">-</Dimension>
-      # </DimensionList>
+        # <DimensionList>
+        #   <Dimension name="GeometricType" unitSymbol="" units="" userValue="">-</Dimension>
+        # </DimensionList>
 
+        dimension_list = []
         while not self._read_match_end_element('DimensionList'):
             if self._match_empty():
                 continue
@@ -592,6 +632,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        return dimension_list
 
     ##############################################
 
@@ -641,25 +682,26 @@ class AutoconfParser(XmlParser):
         layer = ExtensionLayer()
         attr = self._attribute_to_dict('id')
         layer.id = bool(attr['id'])
+        layer.additional_crs = []
         while not self._read_match_end_element('Layer'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
                 name = self._xml_parser.name()
                 if name == 'Constraints':
-                    self._parse_Constraints(layer.constraints)
+                    layer.constraints = self._parse_Constraints()
                 elif name == 'Thematics':
-                   self._parse_Thematics(layer.thematics)
+                    layer.thematics = self._parse_Thematics()
                 elif name == 'InspireThematics':
-                    self._parse_InspireThematics(layer.inspire_thematics)
+                    layer.inspire_thematics = self._parse_InspireThematics()
                 elif name == 'BoundingBox':
                     layer.bounding_box = self._parse_LayerBoundingBox()
                 elif name == 'AdditionalCRS':
                     layer.additional_crs.append(self._read_text('AdditionalCRS'))
                 elif name == 'Originators':
-                    self._parse_Originators(layer.originators)
+                    layer.originators = self._parse_Originators()
                 elif name == 'Legends':
-                    self._parse_Legends(layer.legends)
+                    layer.legends = self._parse_Legends()
                 elif name == 'QuickLook':
                     layer.quicklook = self._parse_Quicklook()
                 elif name == 'TileMatrixSetLink':
@@ -667,7 +709,7 @@ class AutoconfParser(XmlParser):
                 elif name == 'MetadataURL':
                     layer.metadata_url = self._parse_OnlineResource() # MetadataURL
                 elif name == 'Keys':
-                    self._parse_Keys(layer.keys)
+                    layer.keys = self._parse_Keys()
                 else:
                     self._raise()
             # else
@@ -678,29 +720,33 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_Thematics(self, thematics):
+    def _parse_Thematics(self):
 
         # <gpp:Thematics>
         #   <gpp:Thematic>Parcelles cadastrales</gpp:Thematic>
         # </gpp:Thematics>
 
+        thematics = []
         while not self._read_match_end_element('Thematics'):
             if self._match_empty():
                 continue
             thematics.append(self._read_text('Thematic'))
+        return thematics
 
     ##############################################
 
-    def _parse_InspireThematics(self, inspire_thematics):
+    def _parse_InspireThematics(self):
 
         # <gpp:InspireThematics>
         #   <gpp:InspireThematic>Parcelles cadastrales</gpp:InspireThematic>
         # </gpp:InspireThematics>
 
+        inspire_thematics = []
         while not self._read_match_end_element('InspireThematics'):
             if self._match_empty():
                 continue
             inspire_thematics.append(self._read_text('InspireThematic'))
+        return inspire_thematics
 
     ##############################################
 
@@ -714,16 +760,18 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_Originators(self, originators):
+    def _parse_Originators(self):
 
         # <gpp:Originators>
         #   <gpp:Originator name="IGN"> ... </gpp:Originator>
         # </gpp:Originators>
 
+        originators = []
         while not self._read_match_end_element('Originators'):
             if self._match_empty():
                 continue
             originators.append(self._parse_Originator())
+        return originators
 
     ##############################################
 
@@ -753,7 +801,7 @@ class AutoconfParser(XmlParser):
                 elif name == 'URL':
                     originator.url = self._read_text('URL')
                 elif name == 'Constraints':
-                    self._parse_Constraints(originator.constraints)
+                    originator.constraints = self._parse_Constraints()
                 else:
                     self._raise()
             # else
@@ -761,16 +809,18 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_Constraints(self, constraints):
+    def _parse_Constraints(self):
 
         # <gpp:Constraints>
         #   <gpp:Constraint> ... </gpp:Constraint>
         # </gpp:Constraints>
 
+        constraints = []
         while not self._read_match_end_element('Constraints'):
             if self._match_empty():
                 continue
             constraints.append(self._parse_Constraint())
+        return constraints
 
     ##############################################
 
@@ -806,16 +856,18 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_Legends(self, legends):
+    def _parse_Legends(self):
 
         # <gpp:Legends>
         #   <gpp:Legend> ... </gpp:Legend>
         # </gpp:Legends>
 
+        legends = []
         while not self._read_match_end_element('Legends'):
             if self._match_empty():
                 continue
             legends.append(self._parse_Legend())
+        return legends
 
     ##############################################
 
@@ -879,12 +931,13 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_Keys(self, keys):
+    def _parse_Keys(self):
 
         # <gpp:Keys>
         #   <gpp:Key id="algzhye2iogn8fvb0nkgf0zx">http://wxs.ign.fr/algzhye2iogn8fvb0nkgf0zx/geoportail/r/wms</gpp:Key>
         # </gpp:Keys>
 
+        keys = []
         while not self._read_match_end_element('Keys'):
             if self._match_empty():
                 continue
@@ -894,6 +947,7 @@ class AutoconfParser(XmlParser):
             key.url = url
             key.attr = attr['id']
             keys.append(key)
+        return keys
 
     ##############################################
 
@@ -917,7 +971,7 @@ class AutoconfParser(XmlParser):
                 if name == 'TileMatrixSet':
                     tile_matrix_set_link.name = self._read_text('TileMatrixSet')
                 elif name == 'TileMatrixSetLimits':
-                    self._parse_TileMatrixSetLimits(tile_matrix_set_link.limits)
+                    tile_matrix_set_link.limits = self._parse_TileMatrixSetLimits()
                 else:
                     self._raise()
             # else
@@ -925,12 +979,14 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_TileMatrixSetLimits(self, limits):
+    def _parse_TileMatrixSetLimits(self):
 
+        limits = []
         while not self._read_match_end_element('TileMatrixSetLimits'):
             if self._match_empty():
                 continue
             limits.append(self._parse_TileMatrixLimits())
+        return limits
 
     ##############################################
 
