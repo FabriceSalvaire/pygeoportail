@@ -77,14 +77,14 @@ class JsonAble(object):
 
 ####################################################################################################
 
-class AutoConf(JsonAble):
+class Autoconf(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, general, layer_list):
 
-        self.general = None
-        self.layer_list = None
+        self.general = general
+        self.layer_list = layer_list
 
 ####################################################################################################
 
@@ -92,12 +92,12 @@ class General(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, window, bounding_box, title, extension):
 
-        self.window = None
-        self.bounding_box = None
-        self.title = None
-        self.extension = None
+        self.window = window
+        self.bounding_box = bounding_box
+        self.title = title
+        self.extension = extension
 
 ####################################################################################################
 
@@ -105,14 +105,15 @@ class Extension(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self,
+                 theme, default_GMLGFI_style_url, territories, tile_matrix_sets, resolutions, services):
 
-        self.theme = None
-        self.defaultGMLGFIStyleUrl = None
-        self.territories = None
-        self.tile_matrix_sets = None
-        self.resolutions = None
-        self.services = None
+        self.theme = theme
+        self.default_GMLGFI_style_url = default_GMLGFI_style_url
+        self.territories = territories
+        self.tile_matrix_sets = tile_matrix_sets
+        self.resolutions = resolutions
+        self.services = services
 
 ####################################################################################################
 
@@ -120,19 +121,26 @@ class Territory(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self,
+                 default, id_, name,
+                 default_crs, additional_crs,
+                 bounding_box,
+                 min_scale_denominator, max_scale_denominator,
+                 resolution,
+                 center,
+                 default_layers):
 
-        self.default = None
-        self.id = None
-        self.name = None
-        self.default_crs = None
-        self.additional_crs = None
-        self.bounding_box = None
-        self.min_scale_denominator = None
-        self.max_scale_denominator = None
-        self.resolution = None
-        self.center = None
-        self.default_layers = None
+        self.default = default
+        self.id = id_
+        self.name = name
+        self.default_crs = default_crs
+        self.additional_crs = additional_crs
+        self.bounding_box = bounding_box
+        self.min_scale_denominator = min_scale_denominator
+        self.max_scale_denominator = max_scale_denominator
+        self.resolution = resolution
+        self.center = center
+        self.default_layers = default_layers
 
 ####################################################################################################
 
@@ -140,11 +148,11 @@ class TileMatrixSet(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, identifier, supported_crs, tile_matrices):
 
-        self.identifier = None
-        self.supported_crs = None
-        self.tile_matrices = None
+        self.identifier = identifier
+        self.supported_crs = supported_crs
+        self.tile_matrices = tile_matrices
 
 ####################################################################################################
 
@@ -152,15 +160,17 @@ class TileMatrix(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self,
+                 identifier, scale_denominator, top_left_corner,
+                 tile_width, tile_height, matrix_width, matrix_height):
 
-        self.identifier = None
-        self.scale_denominator = None
-        self.top_left_corner = None
-        self.tile_width = None
-        self.tile_height = None
-        self.matrix_width = None
-        self.matrix_height = None
+        self.identifier = identifier
+        self.scale_denominator = scale_denominator
+        self.top_left_corner = top_left_corner
+        self.tile_width = tile_width
+        self.tile_height = tile_height
+        self.matrix_width = matrix_width
+        self.matrix_height = matrix_height
 
 ####################################################################################################
 
@@ -168,12 +178,12 @@ class Server(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, service, title, version, href):
 
-        self.service = None
-        self.title = None
-        self.version = None
-        self.href = None
+        self.service = service
+        self.title = title
+        self.version = version
+        self.href = href
 
 ####################################################################################################
 
@@ -181,10 +191,10 @@ class Format(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, current, name):
 
-        self.current = None
-        self.name = None
+        self.current = current
+        self.name = name
 
 ####################################################################################################
 
@@ -192,11 +202,11 @@ class Style(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, current, name, title):
 
-        self.current = None
-        self.name = None
-        self.title = None
+        self.current = current
+        self.name = name
+        self.title = title
 
 ####################################################################################################
 
@@ -204,13 +214,15 @@ class Dimension(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self,
+                 name, unit_symbol, units, user_value,
+                 value):
 
-        self.name = None
-        self.unit_symbol = None
-        self.units = None
-        self.user_value = None
-        self.value = None
+        self.name = name
+        self.unit_symbol = unit_symbol
+        self.units = units
+        self.user_value = user_value
+        self.value = value
 
 ####################################################################################################
 
@@ -218,10 +230,10 @@ class Legend(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, min_scale_denominator, url):
 
-        self.min_scale_denominator = None
-        self.url = None
+        self.min_scale_denominator = min_scale_denominator
+        self.url = url
 
 ####################################################################################################
 
@@ -229,12 +241,12 @@ class Constraint(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, crs, bounding_box, min_scale_denominator, max_scale_denominator):
 
-        self.crs = None
-        self.bounding_box = None
-        self.min_scale_denominator = None
-        self.max_scale_denominator = None
+        self.crs = crs
+        self.bounding_box = bounding_box
+        self.min_scale_denominator = min_scale_denominator
+        self.max_scale_denominator = max_scale_denominator
 
 ####################################################################################################
 
@@ -242,12 +254,15 @@ class Originator(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self,
+                 name,
+                 attribution, logo, url, constraints):
 
-        self.name = None
-        self.attribution = None
-        self.url = None
-        self.constraints = None
+        self.name = name
+        self.attribution = attribution
+        self.logo = logo
+        self.url = url
+        self.constraints = constraints
 
 ####################################################################################################
 
@@ -255,10 +270,10 @@ class Key(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, id_, url):
 
-        self.id = None
-        self.url = None
+        self.id = id_
+        self.url = url
 
 ####################################################################################################
 
@@ -266,21 +281,26 @@ class Layer(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self,
+                 hidden, queryable,
+                 server, name, title, abstract,
+                 min_scale_denominator, max_scale_denominator,
+                 srs,
+                 format_list, style_list, dimension_list, extension):
 
-        self.hidden = None
-        self.queryable = None
-        self.server = None
-        self.name = None
-        self.title = None
-        self.abstract = None
-        self.min_scale_denominator = None
-        self.max_scale_denominator = None
-        self.format_list = None
-        self.style_list = None
-        self.dimension_list = None
-        self.extension = None
-        self.srs = None
+        self.hidden = hidden
+        self.queryable = queryable
+        self.server = server
+        self.name = name
+        self.title = title
+        self.abstract = abstract
+        self.min_scale_denominator = min_scale_denominator
+        self.max_scale_denominator = max_scale_denominator
+        self.format_list = format_list
+        self.style_list = style_list
+        self.dimension_list = dimension_list
+        self.extension = extension
+        self.srs = srs
 
 ####################################################################################################
 
@@ -288,10 +308,10 @@ class TileMatrixSetLink(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, name, limits):
 
-        self.name = None
-        self.limits = None
+        self.name = name
+        self.limits = limits
 
 ####################################################################################################
 
@@ -299,13 +319,13 @@ class TileMatrixLimits(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self, level, min_tile_row, max_tile_row, min_tile_col, max_tile_col):
 
-        self.level = None
-        self.min_tile_row = None
-        self.max_tile_row = None
-        self.min_tile_col = None
-        self.max_tile_col = None
+        self.level = level
+        self.min_tile_row = min_tile_row
+        self.max_tile_row = max_tile_row
+        self.min_tile_col = min_tile_col
+        self.max_tile_col = max_tile_col
 
 ####################################################################################################
 
@@ -313,20 +333,24 @@ class ExtensionLayer(JsonAble):
 
     ##############################################
 
-    def __init__(self):
+    def __init__(self,
+                 id_,
+                 constraints, thematics, inspire_thematics,
+                 bounding_box, additional_crs, originators, legends,
+                 quicklook, tile_matrix_set_link, metadata_url, keys):
 
-        self.id = None
-        self.constraints = None
-        self.thematics = None
-        self.inspire_thematics = None
-        self.bounding_box = None
-        self.additional_crs = None
-        self.originators = None
-        self.legends = None
-        self.quicklook = None
-        self.tile_matrix_set_link = None
-        self.metadata_url = None
-        self.keys = None
+        self.id = id_
+        self.constraints = constraints
+        self.thematics = thematics
+        self.inspire_thematics = inspire_thematics
+        self.bounding_box = bounding_box
+        self.additional_crs = additional_crs
+        self.originators = originators
+        self.legends = legends
+        self.quicklook = quicklook
+        self.tile_matrix_set_link = tile_matrix_set_link
+        self.metadata_url = metadata_url
+        self.keys = keys
 
 ####################################################################################################
 
@@ -352,6 +376,17 @@ class BoundingBox(JsonAble):
         self.y_min = y_min
         self.x_max = x_max
         self.y_max = y_max
+
+####################################################################################################
+
+class Center(JsonAble):
+
+    ##############################################
+
+    def __init__(self, x, y):
+
+        self.x = x
+        self.y = y
 
 ####################################################################################################
 #

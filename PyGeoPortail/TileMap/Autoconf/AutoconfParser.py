@@ -58,27 +58,26 @@ class AutoconfParser(XmlParser):
         #   <LayerList> ...  </LayerList>
         # </ViewContext>
 
-        autoconf = AutoConf()
         if self._xml_parser.readNext() != QXmlStreamReader.StartDocument:
             self._raise()
         if not self._read_match_start_element('ViewContext'):
             self._raise()
         # while self._xml_parser.readNextStartElement():
-        #     name = self._xml_parser.name()
-        #     if name == 'General':
+        #     ename = self._xml_parser.name()
+        #     if ename == 'General':
         #         self._parse_General(autoconf.general)
-        #     elif name == 'LayerList':
+        #     elif ename == 'LayerList':
         #         self._parse_LayerList(autoconf.layer_list)
         #     else:
         #         self._xml_parser.skipCurrentElement()
         #         self._raise()
         while not self._read_match_end_element('ViewContext'):
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'General':
-                    autoconf.general = self._parse_General()
-                elif name == 'LayerList':
-                    autoconf.layer_list = self._parse_LayerList()
+                ename = self._xml_parser.name()
+                if ename == 'General':
+                    general = self._parse_General()
+                elif ename == 'LayerList':
+                    layer_list = self._parse_LayerList()
                 else:
                     self._raise()
             # else
@@ -88,7 +87,7 @@ class AutoconfParser(XmlParser):
         if self._xml_parser.readNext() != QXmlStreamReader.EndDocument:
             self._raise()
         
-        return autoconf
+        return Autoconf(general, layer_list)
 
     ##############################################
 
@@ -102,24 +101,23 @@ class AutoconfParser(XmlParser):
         # </General>
 
         # dispatched
-        general = General()
         while not self._read_match_end_element('General'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Window':
-                    general.window = self._parse_Window()
-                elif name == 'BoundingBox':
-                    general.bounding_box = self._parse_BoundingBox()
-                elif name == 'Title':
-                    general.title = self._parse_Title()
-                elif name == 'Extension':
-                    general.extension = self._parse_Extension()
+                ename = self._xml_parser.name()
+                if ename == 'Window':
+                    window = self._parse_Window()
+                elif ename == 'BoundingBox':
+                    bounding_box = self._parse_BoundingBox()
+                elif ename == 'Title':
+                    title = self._read_text()
+                elif ename == 'Extension':
+                    extension = self._parse_Extension()
                 else:
                     self._raise()
             # else
-        return general
+        return General(window, bounding_box, title, extension)
 
     ##############################################
 
@@ -147,15 +145,6 @@ class AutoconfParser(XmlParser):
 
     ##############################################
 
-    def _parse_Title(self):
-
-        # <Title>Service d'autoconfiguration des API</Title>
-
-        # dispatched
-        return self._read_text('Title')
-
-    ##############################################
-
     def _parse_Extension(self):
 
         # <Extension>
@@ -171,7 +160,6 @@ class AutoconfParser(XmlParser):
         # </Extension>
 
         # dispatched
-        extension = Extension()
         self._read_until_empty()
         if not self._match_start_element('General'):
             self._raise()
@@ -180,19 +168,19 @@ class AutoconfParser(XmlParser):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement:
-                name = self._xml_parser.name()
-                if name == 'Theme':
-                    extension.theme = self._read_text('Theme')
-                elif name == 'defaultGMLGFIStyleUrl':
-                    extension.defaultGMLGFIStyleUrl = self._read_text('defaultGMLGFIStyleUrl')
-                elif name == 'Territories':
-                    extension.territories = self._parse_Territories()
-                elif name == 'TileMatrixSets':
-                    extension.tile_matrix_sets = self._parse_TileMatrixSets()
-                elif name == 'Resolutions':
-                    extension.resolutions = self._parse_Resolutions()
-                elif name == 'Services':
-                    extension.services = self._parse_Services()
+                ename = self._xml_parser.name()
+                if ename == 'Theme':
+                    theme = self._read_text()
+                elif ename == 'defaultGMLGFIStyleUrl':
+                    defaultGMLGFIStyleUrl = self._read_text()
+                elif ename == 'Territories':
+                    territories = self._parse_Territories()
+                elif ename == 'TileMatrixSets':
+                    tile_matrix_sets = self._parse_TileMatrixSets()
+                elif ename == 'Resolutions':
+                    resolutions = self._parse_Resolutions()
+                elif ename == 'Services':
+                    services = self._parse_Services()
                 else:
                     self._raise()
             # else
@@ -201,7 +189,7 @@ class AutoconfParser(XmlParser):
         if not self._match_end_element('Extension'):
             self._raise()
         
-        return extension
+        return Extension(theme, defaultGMLGFIStyleUrl, territories, tile_matrix_sets, resolutions, services)
 
     ##############################################
 
@@ -239,39 +227,44 @@ class AutoconfParser(XmlParser):
         if not self._match_start_element('Territory'):
             self._raise()
         
-        territory = Territory()
         attr = self._attribute_to_dict('default', 'id', 'name')
-        territory.default = attr['default']
-        territory.id = attr['id']
-        territory.name = attr['name']
-        territory.additional_crs = []
+        default = attr['default']
+        id_ = attr['id']
+        name = attr['name']
+        additional_crs = []
         
         while not self._read_match_end_element('Territory'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'defaultCRS':
-                    territory.default_crs = self._read_text('defaultCRS')
-                elif name == 'AdditionalCRS':
-                    territory.additional_crs.append(self._read_text('AdditionalCRS'))
-                elif name == 'BoundingBox':
-                    territory.bounding_box = self._read_float_list('BoundingBox', sep=',')
-                elif name == 'MinScaleDenominator':
-                    territory.min_scale_denominator = self._read_float('MinScaleDenominator')
-                elif name == 'MaxScaleDenominator':
-                    territory.max_scale_denominator = self._read_float('MaxScaleDenominator')
-                elif name == 'Resolution':
-                    territory.resolution = self._read_float('Resolution')
-                elif name == 'Center':
-                    territory.center = self._parse_Center()
-                elif name == 'DefaultLayers':
-                    territory.default_layers = self._parse_DefaultLayers()
+                ename = self._xml_parser.name()
+                if ename == 'defaultCRS':
+                    default_crs = self._read_text()
+                elif ename == 'AdditionalCRS':
+                    additional_crs.append(self._read_text())
+                elif ename == 'BoundingBox':
+                    bounding_box = self._read_float_list(sep=',')
+                elif ename == 'MinScaleDenominator':
+                    min_scale_denominator = self._read_float()
+                elif ename == 'MaxScaleDenominator':
+                    max_scale_denominator = self._read_float()
+                elif ename == 'Resolution':
+                    resolution = self._read_float()
+                elif ename == 'Center':
+                    center = self._parse_Center()
+                elif ename == 'DefaultLayers':
+                    default_layers = self._parse_DefaultLayers()
                 else:
                     self._raise()
             # else
         
-        return territory
+        return Territory(default, id_, name,
+                         default_crs, additional_crs,
+                         bounding_box,
+                         min_scale_denominator, max_scale_denominator,
+                         resolution,
+                         center,
+                         default_layers)
 
     ##############################################
 
@@ -287,15 +280,15 @@ class AutoconfParser(XmlParser):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'x':
-                    x = self._read_float('x')
-                elif name == 'y':
-                    y = self._read_float('y')
+                ename = self._xml_parser.name()
+                if ename == 'x':
+                    x = self._read_float()
+                elif ename == 'y':
+                    y = self._read_float()
                 else:
                     self._raise()
             # else
-        return x, y
+        return Center(x, y)
 
     ##############################################
 
@@ -314,8 +307,8 @@ class AutoconfParser(XmlParser):
             # if self._xml_parser.isStartElement():
             #     default_layers.append(self._parse_DefaultLayer())
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'DefaultLayer':
+                ename = self._xml_parser.name()
+                if ename == 'DefaultLayer':
                     default_layers.append(self._attribute_to_dict('layerId'))
                 else:
                     self._raise()
@@ -363,23 +356,22 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('TileMatrixSet'):
             self._raise()
-        tile_matrix_set = TileMatrixSet()
-        tile_matrix_set.tile_matrices = []
+        tile_matrices = []
         while not self._read_match_end_element('TileMatrixSet'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Identifier':
-                    tile_matrix_set.identifier = self._read_text('Identifier')
-                elif name == 'SupportedCRS':
-                    tile_matrix_set.supported_crs = self._read_text('SupportedCRS')
-                elif name == 'TileMatrix':
-                    tile_matrix_set.tile_matrices.append(self._parse_TileMatrix())
+                ename = self._xml_parser.name()
+                if ename == 'Identifier':
+                    identifier = self._read_text()
+                elif ename == 'SupportedCRS':
+                    supported_crs = self._read_text()
+                elif ename == 'TileMatrix':
+                    tile_matrices.append(self._parse_TileMatrix())
                 else:
                     self._raise()
             # else
-        return tile_matrix_set
+        return TileMatrixSet(identifier, supported_crs, tile_matrices)
 
     ##############################################
 
@@ -395,36 +387,36 @@ class AutoconfParser(XmlParser):
 	#   <wmts:MatrixHeight>1</wmts:MatrixHeight>
 	# </wmts:TileMatrix>
 
-        tile_matrix = TileMatrix()
         while not self._read_match_end_element('TileMatrix'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Identifier':
-                    tile_matrix.identifier = self._read_int('Identifier')
-                elif name == 'ScaleDenominator':
-                    tile_matrix.scale_denominator = self._read_float('ScaleDenominator')
-                elif name == 'TopLeftCorner':
-                    tile_matrix.top_left_corner = self._read_int_list('TopLeftCorner', sep=' ')
-                elif name == 'TileWidth':
-                    tile_matrix.tile_width = self._read_int('TileWidth')
-                elif name == 'TileHeight':
-                    tile_matrix.tile_height = self._read_int('TileHeight')
-                elif name == 'MatrixWidth':
-                    tile_matrix.matrix_width = self._read_int('MatrixWidth')
-                elif name == 'MatrixHeight':
-                    tile_matrix.matrix_height = self._read_int('MatrixHeight')
+                ename = self._xml_parser.name()
+                if ename == 'Identifier':
+                    identifier = self._read_int()
+                elif ename == 'ScaleDenominator':
+                    scale_denominator = self._read_float()
+                elif ename == 'TopLeftCorner':
+                    top_left_corner = self._read_int_list(sep=' ')
+                elif ename == 'TileWidth':
+                    tile_width = self._read_int()
+                elif ename == 'TileHeight':
+                    tile_height = self._read_int()
+                elif ename == 'MatrixWidth':
+                    matrix_width = self._read_int()
+                elif ename == 'MatrixHeight':
+                    matrix_height = self._read_int()
                 else:
                     self._raise()
             # else
-        return tile_matrix
+        return TileMatrix(identifier, scale_denominator, top_left_corner,
+                          tile_width, tile_height, matrix_width, matrix_height)
 
     ##############################################
 
     def _parse_Resolutions(self):
 
-        return self._read_float_list('Resolutions', sep=',')
+        return self._read_float_list(sep=',')
 
     ##############################################
 
@@ -452,22 +444,21 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Server'):
             self._raise()
-        server = Server()
         attr = self._attribute_to_dict('service', 'title', 'version')
-        server.service = attr['service']
-        server.title = attr['title']
-        server.version = attr['version']
+        service = attr['service']
+        title = attr['title']
+        version = attr['version']
         while not self._read_match_end_element('Server'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'OnlineResource':
-                    server.href = self._attribute_to_dict('xlink:href')
+                ename = self._xml_parser.name()
+                if ename == 'OnlineResource':
+                    href = self._attribute_to_dict('xlink:href')
                 else:
                     self._raise()
             # else
-        return server
+        return Server(service, title, version, href)
 
     ##############################################
 
@@ -505,41 +496,50 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Layer'):
             self._raise()
-        layer = Layer()
         attr = self._attribute_to_dict('hidden', 'queryable')
-        layer.hidden = bool(attr['hidden'])
-        layer.queryable = bool(attr['queryable'])
+        hidden = bool(attr['hidden'])
+        queryable = bool(attr['queryable'])
+        min_scale_denominator = None
+        max_scale_denominator = None
+        srs = None
+        dimension_list = None
+        format_list = None
+        style_list = None
         while not self._read_match_end_element('Layer'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Server':
-                    layer.server = self._parse_Server()
-                elif name == 'Name':
-                    layer.name = self._read_text('Name')
-                elif name == 'Title':
-                    layer.title = self._read_text('Title')
-                elif name == 'Abstract':
-                    layer.abstract = self._read_text('Abstract')
-                elif name == 'MinScaleDenominator':
-                    layer.min_scale_denominator = self._read_float('MinScaleDenominator')
-                elif name == 'MaxScaleDenominator':
-                    layer.max_scale_denominator = self._read_float('MaxScaleDenominator')
-                elif name == 'SRS':
-                    layer.srs = self._read_text('SRS')
-                elif name == 'FormatList':
-                    layer.format_list = self._parse_FormatList()
-                elif name == 'StyleList':
-                    layer.style_list = self._parse_StyleList()
-                elif name == 'DimensionList':
-                    layer.dimension_list = self._parse_DimensionList()
-                elif name == 'Extension':
-                    layer.extension = self._parse_Layer_Extension()
+                ename = self._xml_parser.name()
+                if ename == 'Server':
+                    server = self._parse_Server()
+                elif ename == 'Name':
+                    name = self._read_text()
+                elif ename == 'Title':
+                    title = self._read_text()
+                elif ename == 'Abstract':
+                    abstract = self._read_text()
+                elif ename == 'MinScaleDenominator':
+                    min_scale_denominator = self._read_float()
+                elif ename == 'MaxScaleDenominator':
+                    max_scale_denominator = self._read_float()
+                elif ename == 'SRS':
+                    srs = self._read_text()
+                elif ename == 'FormatList':
+                    format_list = self._parse_FormatList()
+                elif ename == 'StyleList':
+                    style_list = self._parse_StyleList()
+                elif ename == 'DimensionList':
+                    dimension_list = self._parse_DimensionList()
+                elif ename == 'Extension':
+                    extension = self._parse_Layer_Extension()
                 else:
                     self._raise()
             # else
-        return layer
+        return Layer(hidden, queryable,
+                     server, name, title, abstract,
+                     min_scale_denominator, max_scale_denominator,
+                     srs,
+                     format_list, style_list, dimension_list, extension)
 
     ##############################################
 
@@ -563,11 +563,10 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Format'):
             self._raise()
-        format_ = Format()
         attr = self._attribute_to_dict('current')
-        format_.current = attr['current']
-        format_.name = self._read_text('Format')
-        return format_
+        current = attr['current']
+        name = self._read_text()
+        return Format(current, name)
 
     ##############################################
 
@@ -596,22 +595,21 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Style'):
             self._raise()
-        style = Style()
         attr = self._attribute_to_dict('current')
-        style.current = attr['current']
+        current = attr['current']
         while not self._read_match_end_element('Style'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Name':
-                    style.name = self._read_text('Name')
-                elif name == 'Title':
-                    style.title = self._read_text('Title')
+                ename = self._xml_parser.name()
+                if ename == 'Name':
+                    name = self._read_text()
+                elif ename == 'Title':
+                    title = self._read_text()
                 else:
                     self._raise()
             # else
-        return style
+        return Style(current, name, title)
 
     ##############################################
 
@@ -626,8 +624,8 @@ class AutoconfParser(XmlParser):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Dimension':
+                ename = self._xml_parser.name()
+                if ename == 'Dimension':
                     dimension_list.append(self._parse_Dimension())
                 else:
                     self._raise()
@@ -642,14 +640,14 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Dimension'):
             self._raise()
-        dimension = Dimension()
         attr = self._attribute_to_dict('name', 'unitSymbol', 'units', 'userValue')
-        dimension.name = attr['name']
-        dimension.unit_symbol = attr['unitSymbol']
-        dimension.units = attr['units']
-        dimension.user_value = attr['userValue']
-        dimension.value = self._read_text('Dimension')
-        return dimension
+        name = attr['name']
+        unit_symbol = attr['unitSymbol']
+        units = attr['units']
+        user_value = attr['userValue']
+        value = self._read_text()
+        return Dimension(name, unit_symbol, units, user_value,
+                         value)
 
     ##############################################
 
@@ -679,44 +677,54 @@ class AutoconfParser(XmlParser):
         self._read_until_empty()
         if not self._match_start_element('Layer'):
             self._raise()
-        layer = ExtensionLayer()
         attr = self._attribute_to_dict('id')
-        layer.id = bool(attr['id'])
-        layer.additional_crs = []
+        id_ = bool(attr['id'])
+        bounding_box = None
+        constraints = None
+        inspire_thematics = None
+        legends = None
+        metadata_url = None
+        originators = None
+        tile_matrix_set_link = None
+        quicklook = None
+        additional_crs = []
         while not self._read_match_end_element('Layer'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Constraints':
-                    layer.constraints = self._parse_Constraints()
-                elif name == 'Thematics':
-                    layer.thematics = self._parse_Thematics()
-                elif name == 'InspireThematics':
-                    layer.inspire_thematics = self._parse_InspireThematics()
-                elif name == 'BoundingBox':
-                    layer.bounding_box = self._parse_LayerBoundingBox()
-                elif name == 'AdditionalCRS':
-                    layer.additional_crs.append(self._read_text('AdditionalCRS'))
-                elif name == 'Originators':
-                    layer.originators = self._parse_Originators()
-                elif name == 'Legends':
-                    layer.legends = self._parse_Legends()
-                elif name == 'QuickLook':
-                    layer.quicklook = self._parse_Quicklook()
-                elif name == 'TileMatrixSetLink':
-                    layer.tile_matrix_set_link = self._parse_TileMatrixSetLink()
-                elif name == 'MetadataURL':
-                    layer.metadata_url = self._parse_OnlineResource() # MetadataURL
-                elif name == 'Keys':
-                    layer.keys = self._parse_Keys()
+                ename = self._xml_parser.name()
+                if ename == 'Constraints':
+                    constraints = self._parse_Constraints()
+                elif ename == 'Thematics':
+                    thematics = self._parse_Thematics()
+                elif ename == 'InspireThematics':
+                    inspire_thematics = self._parse_InspireThematics()
+                elif ename == 'BoundingBox':
+                    bounding_box = self._parse_LayerBoundingBox()
+                elif ename == 'AdditionalCRS':
+                    additional_crs.append(self._read_text())
+                elif ename == 'Originators':
+                    originators = self._parse_Originators()
+                elif ename == 'Legends':
+                    legends = self._parse_Legends()
+                elif ename == 'QuickLook':
+                    quicklook = self._parse_Quicklook()
+                elif ename == 'TileMatrixSetLink':
+                    tile_matrix_set_link = self._parse_TileMatrixSetLink()
+                elif ename == 'MetadataURL':
+                    metadata_url = self._parse_OnlineResource() # MetadataURL
+                elif ename == 'Keys':
+                    keys = self._parse_Keys()
                 else:
                     self._raise()
             # else
         self._read_until_empty()
         if not self._match_end_element('Extension'):
             self._raise()
-        return layer
+        return ExtensionLayer(id_,
+                              constraints, thematics, inspire_thematics,
+                              bounding_box, additional_crs, originators, legends,
+                              quicklook, tile_matrix_set_link, metadata_url, keys)
 
     ##############################################
 
@@ -730,7 +738,7 @@ class AutoconfParser(XmlParser):
         while not self._read_match_end_element('Thematics'):
             if self._match_empty():
                 continue
-            thematics.append(self._read_text('Thematic'))
+            thematics.append(self._read_text())
         return thematics
 
     ##############################################
@@ -745,7 +753,7 @@ class AutoconfParser(XmlParser):
         while not self._read_match_end_element('InspireThematics'):
             if self._match_empty():
                 continue
-            inspire_thematics.append(self._read_text('InspireThematic'))
+            inspire_thematics.append(self._read_text())
         return inspire_thematics
 
     ##############################################
@@ -755,7 +763,7 @@ class AutoconfParser(XmlParser):
         attr = self._attribute_to_dict('maxT', 'minT')
         max_time = attr['maxT']
         min_time = attr['minT']
-        bounding_box = self._read_float_list('BoundingBox', sep=',')
+        bounding_box = self._read_float_list(sep=',')
         return bounding_box
 
     ##############################################
@@ -786,26 +794,26 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Originator'):
             self._raise()
-        originator = Originator()
         attr = self._attribute_to_dict('name')
-        originator.name = attr['name']
+        name = attr['name']
         while not self._read_match_end_element('Originator'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'Attribution':
-                    originator.attribution = self._read_text('Attribution')
-                elif name == 'Logo':
-                    originator.logo = self._read_text('Logo')
-                elif name == 'URL':
-                    originator.url = self._read_text('URL')
-                elif name == 'Constraints':
-                    originator.constraints = self._parse_Constraints()
+                ename = self._xml_parser.name()
+                if ename == 'Attribution':
+                    attribution = self._read_text()
+                elif ename == 'Logo':
+                    logo = self._read_text()
+                elif ename == 'URL':
+                    url = self._read_text()
+                elif ename == 'Constraints':
+                    constraints = self._parse_Constraints()
                 else:
                     self._raise()
             # else
-        return originator
+        return Originator(name,
+                          attribution, logo, url, constraints)
 
     ##############################################
 
@@ -835,24 +843,23 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Constraint'):
             self._raise()
-        constraint = Constraint()
         while not self._read_match_end_element('Constraint'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'CRS':
-                    constraint.crs = self._read_text('CRS')
-                elif name == 'BoundingBox':
-                    constraint.bounding_box = self._parse_LayerBoundingBox()
-                elif name == 'MinScaleDenominator':
-                    constraint.min_scale_denominator = self._read_int('MinScaleDenominator')
-                elif name == 'MaxScaleDenominator':
-                    constraint.min_scale_denominator = self._read_int('MaxScaleDenominator')
+                ename = self._xml_parser.name()
+                if ename == 'CRS':
+                    crs = self._read_text()
+                elif ename == 'BoundingBox':
+                    bounding_box = self._parse_LayerBoundingBox()
+                elif ename == 'MinScaleDenominator':
+                    min_scale_denominator = self._read_int()
+                elif ename == 'MaxScaleDenominator':
+                    max_scale_denominator = self._read_int()
                 else:
                     self._raise()
             # else
-        return constraint
+        return Constraint(crs, bounding_box, min_scale_denominator, max_scale_denominator)
 
     ##############################################
 
@@ -882,20 +889,19 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Legend'):
             self._raise()
-        legend = Legend()
         while not self._read_match_end_element('Legend'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'MinScaleDenominator':
-                    legend.min_scale_denominator = self._read_int('MinScaleDenominator')
-                elif name == 'LegendURL':
-                    legend.url = self._parse_OnlineResource()
+                ename = self._xml_parser.name()
+                if ename == 'MinScaleDenominator':
+                    min_scale_denominator = self._read_int()
+                elif ename == 'LegendURL':
+                    url = self._parse_OnlineResource()
                 else:
                     self._raise()
             # else
-        return legend
+        return Legend(min_scale_denominator, url)
 
     ##############################################
 
@@ -941,12 +947,10 @@ class AutoconfParser(XmlParser):
         while not self._read_match_end_element('Keys'):
             if self._match_empty():
                 continue
-            key = Key()
-            url = self._read_text('Key')
+            url = self._read_text()
             attr = self._attribute_to_dict('id')
-            key.url = url
-            key.attr = attr['id']
-            keys.append(key)
+            id_ = attr['id']
+            keys.append(Key(url, id_))
         return keys
 
     ##############################################
@@ -962,20 +966,19 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('TileMatrixSetLink'):
             self._raise()
-        tile_matrix_set_link = TileMatrixSetLink()
         while not self._read_match_end_element('TileMatrixSetLink'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'TileMatrixSet':
-                    tile_matrix_set_link.name = self._read_text('TileMatrixSet')
-                elif name == 'TileMatrixSetLimits':
-                    tile_matrix_set_link.limits = self._parse_TileMatrixSetLimits()
+                ename = self._xml_parser.name()
+                if ename == 'TileMatrixSet':
+                    name = self._read_text()
+                elif ename == 'TileMatrixSetLimits':
+                    limits = self._parse_TileMatrixSetLimits()
                 else:
                     self._raise()
             # else
-        return tile_matrix_set_link
+        return TileMatrixSetLink(name, limits)
 
     ##############################################
 
@@ -1002,26 +1005,25 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('TileMatrixLimits'):
             self._raise()
-        tile_matrix_limits = TileMatrixLimits()
         while not self._read_match_end_element('TileMatrixLimits'):
             if self._match_empty():
                 continue
             if self._xml_parser.isStartElement():
-                name = self._xml_parser.name()
-                if name == 'TileMatrix':
-                    tile_matrix_limits.level = self._read_int('TileMatrix')
-                elif name == 'MinTileRow':
-                    tile_matrix_limits.min_tile_row = self._read_int('MinTileRow')
-                elif name == 'MaxTileRow':
-                    tile_matrix_limits.max_tile_row = self._read_int('MaxTileRow')
-                elif name == 'MinTileCol':
-                    tile_matrix_limits.min_tile_col = self._read_int('MinTileCol')
-                elif name == 'MaxTileCol':
-                    tile_matrix_limits.max_tile_col = self._read_int('MaxTileCol')
+                ename = self._xml_parser.name()
+                if ename == 'TileMatrix':
+                    level = self._read_int()
+                elif ename == 'MinTileRow':
+                    min_tile_row = self._read_int()
+                elif ename == 'MaxTileRow':
+                    max_tile_row = self._read_int()
+                elif ename == 'MinTileCol':
+                    min_tile_col = self._read_int()
+                elif ename == 'MaxTileCol':
+                    max_tile_col = self._read_int()
                 else:
                     self._raise()
             # else
-        return tile_matrix_limits
+        return TileMatrixLimits(level, min_tile_row, max_tile_row, min_tile_col, max_tile_col)
 
 ####################################################################################################
 #

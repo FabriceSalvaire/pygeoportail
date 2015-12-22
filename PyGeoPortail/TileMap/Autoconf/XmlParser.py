@@ -128,45 +128,34 @@ class XmlParser(object):
 
     ##############################################
 
-    def _read_text(self, name):
+    def _read_text(self):
 
         # start must be read
-
-        # xml_parser = self._xml_parser
-        # if self._xml_parser.readNext() == QXmlStreamReader.Characters:
-        #     text = xml_parser.text()
-        # else:
-        #     self._raise()
-        # if self._read_match_end_element(name):
-        #     return text
-        # else:
-        #     self._raise()
-
         return self._xml_parser.readElementText()
 
     ##############################################
 
-    def _read_int(self, name):
+    def _read_int(self):
 
-        return int(self._read_text(name))
-
-    ##############################################
-
-    def _read_float(self, name):
-
-        return float(self._read_text(name))
+        return int(self._read_text())
 
     ##############################################
 
-    def _read_int_list(self, name, sep=','):
+    def _read_float(self):
 
-        return [int(x) for x in self._read_text(name).split(sep)]
+        return float(self._read_text())
 
     ##############################################
 
-    def _read_float_list(self, name, sep=','):
+    def _read_int_list(self, sep=','):
 
-        return [float(x) for x in self._read_text(name).split(sep)]
+        return [int(x) for x in self._read_text().split(sep)]
+
+    ##############################################
+
+    def _read_float_list(self, sep=','):
+
+        return [float(x) for x in self._read_text().split(sep)]
 
     ##############################################
 
