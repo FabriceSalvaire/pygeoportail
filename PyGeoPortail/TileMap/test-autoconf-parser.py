@@ -1,6 +1,6 @@
 ####################################################################################################
 
-from PyGeoPortail.TileMap.Autoconf import AutoConfParser
+from PyGeoPortail.TileMap.Autoconf.AutoconfParser import AutoconfParser
 
 ####################################################################################################
 
@@ -10,7 +10,7 @@ with open(xml_path) as f:
     xml_document = f.read()
 xml_document = bytes(xml_document, encoding='utf8')
 
-autoconf_parser = AutoConfParser()
+autoconf_parser = AutoconfParser()
 autoconf = autoconf_parser.parse_document(xml_document)
 
 print(autoconf.to_json())
