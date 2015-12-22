@@ -314,7 +314,8 @@ class AutoconfParser(XmlParser):
             if self._xml_parser.isStartElement():
                 ename = self._xml_parser.name()
                 if ename == 'DefaultLayer':
-                    default_layers.append(self._attribute_to_dict('layerId'))
+                    attr = self._attribute_to_dict('layerId')
+                    default_layers.append(attr['layerId'])
                 else:
                     self._raise()
             # else
@@ -464,7 +465,8 @@ class AutoconfParser(XmlParser):
             if self._xml_parser.isStartElement():
                 ename = self._xml_parser.name()
                 if ename == 'OnlineResource':
-                    href = self._attribute_to_dict('xlink:href')
+                    attr = self._attribute_to_dict('xlink:href')
+                    href = attr['xlink:href']
                 else:
                     self._raise()
             # else
@@ -790,7 +792,7 @@ class AutoconfParser(XmlParser):
         max_time = attr['maxT']
         min_time = attr['minT']
         bounding_box = self._read_float_list(sep=',')
-        return bounding_box
+        return bounding_box # Fixme:
 
     ##############################################
 

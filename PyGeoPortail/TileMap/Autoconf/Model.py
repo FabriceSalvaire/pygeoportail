@@ -66,7 +66,7 @@ class JsonAble(object):
 
     @property
     def __json_interface__(self):
-        return self.__dict__
+        return {'_object':self.__class__.__name__, 'attributes':self.__dict__}
 
     ##############################################
 
