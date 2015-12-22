@@ -31,6 +31,7 @@ logger = Logging.setup_logging('pygeoportail')
 
 from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
                                              GeoPortailWTMS,
+                                             GeoPortailWTMSLicence,
                                              GeoPortailMapProvider,
                                              GeoPortailOthorPhotoProvider)
 
@@ -38,9 +39,9 @@ from PyGeoPortail.TileMap.GeoPortail import (GeoPortailPyramid,
 
 geoportail_pyramid = GeoPortailPyramid()
 
-geoportail_wtms = GeoPortailWTMS(user='fabrice.salvaire@orange.fr',
-                                 password='fA77Sal(!',
-                                 api_key='qd58byg78dg3nloou4ksa0pz')
+from PyGeoPortail.Config import Config
+geoportail_licence = GeoPortailWTMSLicence.load_from_json(Config.License.geoportail)
+geoportail_wtms = GeoPortailWTMS(geoportail_licence)
 geoportail_map_provider = GeoPortailMapProvider(geoportail_wtms)
 
 media_dpi = 100
