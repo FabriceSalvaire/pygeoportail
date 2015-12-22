@@ -62,6 +62,7 @@ class AutoconfParser(XmlParser):
             self._raise()
         if not self._read_match_start_element('ViewContext'):
             self._raise()
+        
         # while self._xml_parser.readNextStartElement():
         #     ename = self._xml_parser.name()
         #     if ename == 'General':
@@ -71,6 +72,7 @@ class AutoconfParser(XmlParser):
         #     else:
         #         self._xml_parser.skipCurrentElement()
         #         self._raise()
+        
         while not self._read_match_end_element('ViewContext'):
             if self._xml_parser.isStartElement():
                 ename = self._xml_parser.name()
@@ -84,6 +86,7 @@ class AutoconfParser(XmlParser):
             # or match end and
             # elif not self._match_empty():
             #     self._raise()
+        
         if self._xml_parser.readNext() != QXmlStreamReader.EndDocument:
             self._raise()
         
@@ -117,6 +120,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return General(window, bounding_box, title, extension)
 
     ##############################################
@@ -288,6 +292,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return Center(x, y)
 
     ##############################################
@@ -356,6 +361,7 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('TileMatrixSet'):
             self._raise()
+        
         tile_matrices = []
         while not self._read_match_end_element('TileMatrixSet'):
             if self._match_empty():
@@ -371,6 +377,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return TileMatrixSet(identifier, supported_crs, tile_matrices)
 
     ##############################################
@@ -409,6 +416,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return TileMatrix(identifier, scale_denominator, top_left_corner,
                           tile_width, tile_height, matrix_width, matrix_height)
 
@@ -445,9 +453,11 @@ class AutoconfParser(XmlParser):
         if not self._match_start_element('Server'):
             self._raise()
         attr = self._attribute_to_dict('service', 'title', 'version')
+        
         service = attr['service']
         title = attr['title']
         version = attr['version']
+        
         while not self._read_match_end_element('Server'):
             if self._match_empty():
                 continue
@@ -458,6 +468,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return Server(service, title, version, href)
 
     ##############################################
@@ -496,15 +507,18 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Layer'):
             self._raise()
+        
         attr = self._attribute_to_dict('hidden', 'queryable')
         hidden = bool(attr['hidden'])
         queryable = bool(attr['queryable'])
+        
         min_scale_denominator = None
         max_scale_denominator = None
         srs = None
         dimension_list = None
         format_list = None
         style_list = None
+        
         while not self._read_match_end_element('Layer'):
             if self._match_empty():
                 continue
@@ -563,9 +577,11 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Format'):
             self._raise()
+        
         attr = self._attribute_to_dict('current')
         current = attr['current']
         name = self._read_text()
+        
         return Format(current, name)
 
     ##############################################
@@ -597,6 +613,7 @@ class AutoconfParser(XmlParser):
             self._raise()
         attr = self._attribute_to_dict('current')
         current = attr['current']
+        
         while not self._read_match_end_element('Style'):
             if self._match_empty():
                 continue
@@ -609,6 +626,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return Style(current, name, title)
 
     ##############################################
@@ -640,12 +658,15 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Dimension'):
             self._raise()
+        
         attr = self._attribute_to_dict('name', 'unitSymbol', 'units', 'userValue')
         name = attr['name']
         unit_symbol = attr['unitSymbol']
         units = attr['units']
         user_value = attr['userValue']
+        
         value = self._read_text()
+        
         return Dimension(name, unit_symbol, units, user_value,
                          value)
 
@@ -677,8 +698,10 @@ class AutoconfParser(XmlParser):
         self._read_until_empty()
         if not self._match_start_element('Layer'):
             self._raise()
+        
         attr = self._attribute_to_dict('id')
         id_ = bool(attr['id'])
+        
         bounding_box = None
         constraints = None
         inspire_thematics = None
@@ -688,6 +711,7 @@ class AutoconfParser(XmlParser):
         tile_matrix_set_link = None
         quicklook = None
         additional_crs = []
+        
         while not self._read_match_end_element('Layer'):
             if self._match_empty():
                 continue
@@ -718,9 +742,11 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         self._read_until_empty()
         if not self._match_end_element('Extension'):
             self._raise()
+        
         return ExtensionLayer(id_,
                               constraints, thematics, inspire_thematics,
                               bounding_box, additional_crs, originators, legends,
@@ -794,8 +820,10 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Originator'):
             self._raise()
+        
         attr = self._attribute_to_dict('name')
         name = attr['name']
+        
         while not self._read_match_end_element('Originator'):
             if self._match_empty():
                 continue
@@ -812,6 +840,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return Originator(name,
                           attribution, logo, url, constraints)
 
@@ -843,6 +872,7 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Constraint'):
             self._raise()
+        
         while not self._read_match_end_element('Constraint'):
             if self._match_empty():
                 continue
@@ -859,6 +889,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return Constraint(crs, bounding_box, min_scale_denominator, max_scale_denominator)
 
     ##############################################
@@ -889,6 +920,7 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('Legend'):
             self._raise()
+        
         while not self._read_match_end_element('Legend'):
             if self._match_empty():
                 continue
@@ -901,6 +933,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return Legend(min_scale_denominator, url)
 
     ##############################################
@@ -966,6 +999,7 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('TileMatrixSetLink'):
             self._raise()
+        
         while not self._read_match_end_element('TileMatrixSetLink'):
             if self._match_empty():
                 continue
@@ -978,6 +1012,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return TileMatrixSetLink(name, limits)
 
     ##############################################
@@ -1005,6 +1040,7 @@ class AutoconfParser(XmlParser):
 
         if not self._match_start_element('TileMatrixLimits'):
             self._raise()
+        
         while not self._read_match_end_element('TileMatrixLimits'):
             if self._match_empty():
                 continue
@@ -1023,6 +1059,7 @@ class AutoconfParser(XmlParser):
                 else:
                     self._raise()
             # else
+        
         return TileMatrixLimits(level, min_tile_row, max_tile_row, min_tile_col, max_tile_col)
 
 ####################################################################################################
